@@ -9,9 +9,11 @@ import sqlite3
 # For using my .ENV files
 load_dotenv()
 
+job_db = os.getenv("JOB_DB")
 
-# -------------------FOR SQLLITE----------------------------
+# -------------------FOR SQLITE----------------------------
 
+# make jobs.db a variable
 # https://docs.python.org/3/library/sqlite3.html
 # https://www.blog.pythonlibrary.org/2021/09/30/sqlite/#:~:text=Here%20is%20how%20you%20would%20create%20a%20SQLite,the%20sqlite3%20module%20will%20create%20an%20empty%20database.
 
@@ -19,7 +21,7 @@ load_dotenv()
 def create():
     # Creates the DB. Only needs to be called once.
 
-    connection = sqlite3.connect("jobs.db")
+    connection = sqlite3.connect(job_db)
     cursor = connection.cursor()
 
     cursor.execute(
@@ -33,7 +35,7 @@ def create():
 def ingest_opportunities(job_data):
     # Inserts opportunities if and only if they do not already exist
 
-    connection = sqlite3.connect("jobs.db")
+    connection = sqlite3.connect(job_db)
     cursor = connection.cursor()
 
     for job in job_data:
@@ -50,8 +52,6 @@ def ingest_opportunities(job_data):
                 "INSERT INTO jobs VALUES (?, ?, ?, ?, ?)",
                 (job["_company"], job["_title"], job["_location"], job["_link"], False),
             )
-        else:
-            continue
 
     connection.commit()
     connection.close()
@@ -61,7 +61,7 @@ def ingest_opportunities(job_data):
 
 
 # TO-DO: Fix this up to add the company and the location
-def reddit_scrape() -> List[object]:
+def reddit_response() -> List[object]:
     # Web Scrapping Tools
     software_engineer_url = os.getenv("SOFTWARE_ENGINEER_URL")
 
@@ -94,7 +94,7 @@ def reddit_scrape() -> List[object]:
 
 
 def rapid_response() -> List[object]:
-    url = "https://indeed12.p.rapidapi.com/jobs/search?locality=us&query=software+engineer&location=Fullerton&formatted_relative_time=today&page_id=1"
+    url = os.getenv("RAPID_API_URL")
 
     rapid_api_key = os.getenv("RAPID_API_KEY")
     rapid_api_host = os.getenv("RAPID_API_HOST")
@@ -125,7 +125,7 @@ def rapid_response() -> List[object]:
 # -------------------FOR LINKEDIN----------------------------
 
 
-def indeed_response() -> List[object]:
+def linkedin_response() -> List[object]:
     url = os.getenv("LINKEDIN_URL")
 
     response = requests.get(url)
@@ -139,7 +139,7 @@ def indeed_response() -> List[object]:
         class_="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
     )
 
-    indeed_jobs = []
+    linked_in_jobs = []
 
     for elem in div_post:
         job = {}
@@ -152,18 +152,18 @@ def indeed_response() -> List[object]:
         ).text.strip()
         job["_link"] = elem.find("a", class_="base-card__full-link")["href"]
 
-        indeed_jobs.append(job)
+        linked_in_jobs.append(job)
 
-    return indeed_jobs
+    return linked_in_jobs
 
 
-# -------------------FOR HELPER FUNCTIONS (possible in class)----------------------------
+# -------------------FOR HELPER FUNCTIONS ----------------------------
 
 # List opportunities shows all the opportunities that have NOT been posted yet
 
 
 def list_opportunities() -> List[object]:
-    connection = sqlite3.connect("jobs.db")
+    connection = sqlite3.connect(job_db)
     cursor = connection.cursor()
 
     cursor.execute("SELECT * FROM jobs")
@@ -171,13 +171,9 @@ def list_opportunities() -> List[object]:
 
     # Printing out for debugging purposes
     for row in rows:
-        _company = row[0]
-        _title = row[1]
-        _location = row[2]
-        _link = row[3]
-        _processed = row[4]
+        _company, _title, _location, _link, _processed = zip(*row)
 
-        if _processed == False:
+        if not _processed:
             print("Company:", _company)
             print("Title:", _title)
             print("Location:", _location)
@@ -212,11 +208,7 @@ async def execute_opportunities_webhook():
     data_results = list_opportunities()
 
     for element in data_results:
-        company = element[0]
-        title = element[1]
-        location = element[2]
-        link = element[3]
-        status = element[4]
+        company, title, location, link, status = zip(*element)
 
         # Checking to see if the PROCESSED status is 0, and if so, means false.
         if status == 0:
@@ -224,7 +216,7 @@ async def execute_opportunities_webhook():
                 f"NEW JOB! {company} is hiring for {title} at {location}!!! Link: {link}"
             )
 
-        connection = sqlite3.connect("jobs.db")
+        connection = sqlite3.connect(job_db)
         cursor = connection.cursor()
 
         # Updating the PROCESSED status to 1, which means its already been posted.
@@ -251,11 +243,11 @@ client.run(discord_token)
 
 
 # Lines 254 and 255 web scrap/send an api request for the jobs!
-# indeed_response = indeed_response()
+# linkedin_response = linkedin_response()
 # rapid_response = rapid_response()
 
 # Lines 258 and 259 actually place all that data into the DB
-# ingest_opportunities(indeed_response)
+# ingest_opportunities(linkedin_response)
 # ingest_opportunities(rapid_response)
 
 # Just prints out the jobs in general
