@@ -9,13 +9,14 @@ import argparse
 from discord import Webhook
 from typing import List
 from bs4 import BeautifulSoup
+from datetime import datetime, date
 from dotenv import load_dotenv
 
 # For using my .ENV files
 load_dotenv()
 job_db = os.getenv("JOB_DB")
 
-#-----------------FOR CLI LIBRARY COMMAND-------------
+# -----------------FOR CLI LIBRARY COMMAND-------------
 
 # ----argparse custom command line thoughts----
 
@@ -28,7 +29,7 @@ job_db = os.getenv("JOB_DB")
 
 # For web scraping for instance, we can compare the input of our --days-needed-up-to command (3), with the day that it was posted for the linkedin posts
 
-# For the API call, each object has when the job was posted via "formatted_related_time_stamp" in the object. 
+# For the API call, each object has when the job was posted via "formatted_related_time_stamp" in the object.
 
 # We could definitely either create a list or even go the easier route and create a conditional. Look below for what I mean.
 
@@ -47,13 +48,16 @@ job_db = os.getenv("JOB_DB")
 
 # Of course, we already check for duplicates so that won't need to be a worry
 
-def custom_day_command -> str:
 
-    # Creates the object
-    parser = argparse.ArgumentParser(description="Custom command for specifying days for fetching jobs.")
+def extract_command_value() -> str:
+    parser = argparse.ArgumentParser(
+        description="Custom command for specifying days for fetching jobs."
+    )
 
     # Add an argument (the custom command) along with the help functionality to see what the command does
-    parser.add_argument("--days-needed", type=int, help="The number of days needed to fetch jobs.")
+    parser.add_argument(
+        "--days-needed", type=int, help="The number of days needed to fetch jobs."
+    )
 
     # Parse the argument and insert into a variable
     arguments = parser.parse_args()
@@ -62,11 +66,9 @@ def custom_day_command -> str:
     days_needed_variable = arguments.days_needed
 
     # Return that variable that holds the --days-needed command
-    
-    # TO DO - Accessing the value that we input in 
+
+    # TO DO - Accessing the value that we input in
     return days_needed_variable
-
-
 
 
 # -------------------FOR SQLITE----------------------------
@@ -133,34 +135,24 @@ def rapid_response() -> List[object]:
     rapid_jobs = []
     response = requests.get(url, headers=headers).json()
 
-    # re import info - https://www.geeksforgeeks.org/find-all-the-numbers-in-a-string-using-regular-expression-in-python/
+    command_line_value = extract_command_value()  # Extracts command-line value
 
     for elem in response["hits"]:
         time = elem["formatted_relative_time"]
-        time_in_lowercase = (
-            time.lower()
-        )  # Checking for "Today" or "Yesterday" in the relative timestamp
+
         numeric = re.search(r"\d+", time)
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
-        if (
-            formatted_time_integer >= 0
-            and formatted_time_integer <= 3
-            or "today" in time_in_lowercase
-            or "yesterday" in time_in_lowercase
-        ):
-            if len(rapid_jobs) <= 3:
-                job = {}
-                job["_company"] = elem["company_name"]
-                job["_title"] = elem["title"]
-                job["_location"] = elem["location"]
-                job[
-                    "_link"
-                ] = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
+        if len(rapid_jobs) <= 5 and int(command_line_value) >= formatted_time_integer:
+            job = {}
+            job["_company"] = elem["company_name"]
+            job["_title"] = elem["title"]
+            job["_location"] = elem["location"]
+            job["_link"] = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
 
-            print(elem)
+        # print(elem)
 
-            rapid_jobs.append(job)
+        rapid_jobs.append(job)
 
     return rapid_jobs
 
@@ -182,25 +174,42 @@ def linkedin_response() -> List[object]:
         class_="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
     )
 
+    date_div_post = parse_content.find_all(
+        "time",
+        class_="job-search-card__listdate",
+    )  # Recieves all the job posting dates
+
+    command_line_value = extract_command_value()  # Extracts command-line value
+
     linked_in_jobs = []
 
-    for elem in div_post:
-        if len(linked_in_jobs) <= 2:
-            job = {}
-            job["_company"] = elem.find(
-                "h4", class_="base-search-card__subtitle"
-            ).text.strip()
-            job["_title"] = elem.find(
-                "h3", class_="base-search-card__title"
-            ).text.strip()
-            job["_location"] = elem.find(
-                "span", class_="job-search-card__location"
-            ).text.strip()
-            job["_link"] = elem.find("a", class_="base-card__full-link")["href"].split(
-                "?"
-            )[0]
+    for elem, date in zip(div_post, date_div_post):
+        # If the value of date.text.strip() has the word "days" in it, we access the number, and compare it with the
+        # value of the command line
 
-            linked_in_jobs.append(job)
+        if "days" in date.text.strip():
+            numeric = re.search(r"\d+", date.text.strip())
+            formatted_time_integer = int(numeric.group()) if numeric else 0
+
+            if (
+                len(linked_in_jobs) <= 5
+                and int(command_line_value) >= formatted_time_integer
+            ):
+                job = {}
+                job["_company"] = elem.find(
+                    "h4", class_="base-search-card__subtitle"
+                ).text.strip()
+                job["_title"] = elem.find(
+                    "h3", class_="base-search-card__title"
+                ).text.strip()
+                job["_location"] = elem.find(
+                    "span", class_="job-search-card__location"
+                ).text.strip()
+                job["_link"] = elem.find("a", class_="base-card__full-link")[
+                    "href"
+                ].split("?")[0]
+
+                linked_in_jobs.append(job)
 
     return linked_in_jobs
 
@@ -265,7 +274,7 @@ def list_filtered_opportunities() -> List[object]:
     connection = sqlite3.connect(job_db)
     cursor = connection.cursor()
 
-    cursor.execute("SELECT * FROM jobs WHERE _processed = 0 LIMIT 5")
+    cursor.execute("SELECT * FROM jobs WHERE _processed = 0 LIMIT 10")
     rows = cursor.fetchall()
 
     not_processed_rows = []
@@ -299,14 +308,15 @@ def list_filtered_opportunities() -> List[object]:
 
 def format_opportunities(data_results) -> str:
     formatted_string = ""
-
+    number_identifier = 1
     for data_block in data_results:
         _company = data_block["_company"]
         _title = data_block["_title"]
         _location = data_block["_location"]
         _link = data_block["_link"]
 
-        formatted_string += f"✨✨ NEW OPPORTUNITY!!! ✨✨ {_company} is NOW hiring for {_title} @{_location}! {_link}\n\n"
+        formatted_string += f"\n**{number_identifier}. [{_company}]({_link})** is **NOW** hiring for **{_title}** @{_location}! \n\n"
+        number_identifier += 1
 
     print(formatted_string)
     return formatted_string
@@ -365,7 +375,17 @@ client = discord.Client(intents=intents)
 
 async def execute_opportunities_webhook(webhook_url, message):
     # Create a dictionary payload for the message content
-    payload = {"content": message}
+    payload = {
+        "content": " # ✨✨ NEW JOB POSTINGS BELOW! ✨✨ ",
+        "tts": False,
+        "embeds": [
+            {
+                "title": f"> Job Postings for {date.today()}\n\n",
+                "description": message,
+                "color": 0x05A3FF,
+            }
+        ],
+    }
 
     # Convert the payload to JSON format
     json_payload = json.dumps(payload)
@@ -384,12 +404,14 @@ async def execute_opportunities_webhook(webhook_url, message):
 # -----------------EXECUTE FUNCTIONS-----------------
 
 
-rapid_data = rapid_response()
-linkedin_data = linkedin_response()
+# rapid_data = rapid_response()
+# linkedin_data = linkedin_response()
 
-ingest_opportunities(rapid_data)
-ingest_opportunities(linkedin_data)
+# ingest_opportunities(rapid_data)
+# ingest_opportunities(linkedin_data)
 
+# Resetting processed status for testing purposes only
+reset_processed_status()
 
 data_results = list_filtered_opportunities()
 formatted_message = format_opportunities(data_results)
@@ -408,4 +430,5 @@ if __name__ == "__main__":
 
 # Please note all jobs right now have been set to _processed = 0 for testing purposes.
 # Will delete everything from the DB due to inconsistencies, and will continue with the final product from here on.
-list_all_opportunities()
+# reset_processed_status()
+# list_all_opportunities()
