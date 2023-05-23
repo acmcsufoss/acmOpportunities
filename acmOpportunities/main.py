@@ -4,15 +4,69 @@ import json
 import asyncio
 import discord
 import re
+import sqlite3
+import argparse
 from discord import Webhook
 from typing import List
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-import sqlite3
 
 # For using my .ENV files
 load_dotenv()
 job_db = os.getenv("JOB_DB")
+
+#-----------------FOR CLI LIBRARY COMMAND-------------
+
+# ----argparse custom command line thoughts----
+
+
+# --days-needed-up-to command will be run for jobs that are from the day that it was executed to the amount of days wanted
+
+# For instance, if we wanted all the jobs from today up to 2 days, we can say something like "python main.py --days-needed-up-to 3" (I'll explain why its 3 and NOT 2)
+
+# To go about this, we can create a simple loop through each webscraping/api call (which I already do BUT we will then add a conditional to this loop)
+
+# For web scraping for instance, we can compare the input of our --days-needed-up-to command (3), with the day that it was posted for the linkedin posts
+
+# For the API call, each object has when the job was posted via "formatted_related_time_stamp" in the object. 
+
+# We could definitely either create a list or even go the easier route and create a conditional. Look below for what I mean.
+
+# Lets say we have a List[any] called "relative_time_stamps" that contain the relative timestamp of when it was posted
+
+# Lets say the List[any] (relative_time_stamp) contains -> ["Today", "Today", "Yesterday", "2", "2", "3", "5"]
+
+# What we can do is compare the number from the command line (--days-needed-up-to) to this list
+
+# So "3" != "Today" so we append the data from the webscrape/api call to their respected arrays (List[object])
+# Going forward, "3" != "Yesterday" so we append that data
+# Going forward, "3" != "2" so we append that data
+# Going forward, "3" != "3" equates to false, therefore, the loop breaks and it returns the resulting data
+
+# So in this case we would have to create a simple conditional that compares how many days we want to whatever time stamp is given in each of those webscraping/api request functions!
+
+# Of course, we already check for duplicates so that won't need to be a worry
+
+def custom_day_command -> str:
+
+    # Creates the object
+    parser = argparse.ArgumentParser(description="Custom command for specifying days for fetching jobs.")
+
+    # Add an argument (the custom command) along with the help functionality to see what the command does
+    parser.add_argument("--days-needed", type=int, help="The number of days needed to fetch jobs.")
+
+    # Parse the argument and insert into a variable
+    arguments = parser.parse_args()
+
+    # Create a new variable to access the --days-needed command
+    days_needed_variable = arguments.days_needed
+
+    # Return that variable that holds the --days-needed command
+    
+    # TO DO - Accessing the value that we input in 
+    return days_needed_variable
+
+
 
 
 # -------------------FOR SQLITE----------------------------
