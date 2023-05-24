@@ -1,1 +1,15 @@
-# AUTOMATING SCRAP.PY
+name: Daily Data Retrieval Automation
+
+on:
+  schedule:
+    - cron: "0 0 */2 * *" # Runs everyday at 12AM
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run script
+        run: python ../acmOpportunities/main.py --days-needed 2 # Custom CLI Command

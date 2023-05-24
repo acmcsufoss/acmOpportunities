@@ -376,7 +376,7 @@ client = discord.Client(intents=intents)
 async def execute_opportunities_webhook(webhook_url, message):
     # Create a dictionary payload for the message content
     payload = {
-        "content": " # ✨✨ NEW JOB POSTINGS BELOW! ✨✨ ",
+        "content": " # ✨ :capyshock: NEW JOB POSTINGS BELOW! :capycool:✨✨ ",
         "tts": False,
         "embeds": [
             {
@@ -430,5 +430,5 @@ if __name__ == "__main__":
 
 # Please note all jobs right now have been set to _processed = 0 for testing purposes.
 # Will delete everything from the DB due to inconsistencies, and will continue with the final product from here on.
-# reset_processed_status()
+
 # list_all_opportunities()
