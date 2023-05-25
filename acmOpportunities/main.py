@@ -12,21 +12,21 @@ from bs4 import BeautifulSoup
 from datetime import date
 from dotenv import load_dotenv
 
-# For using my .ENV files
-load_dotenv()
-
+load_dotenv()  # To obtain keys from the .env file
 
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
 
 def extract_command_value() -> str:
+    """Returns the value of type str prompted in the command line following --days-needed"""
+
     parser = argparse.ArgumentParser(
         description="Custom command for specifying days for fetching jobs."
     )
 
     # Add an argument (the custom command) along with the help functionality to see what the command does
     parser.add_argument(
-        "--days-needed", type=int, help="The number of days needed to fetch jobs."
+        "--days-needed", type=str, help="The number of days needed to fetch jobs."
     )
 
     # Parse the argument and insert into a variable
@@ -50,19 +50,16 @@ db_port = os.getenv("DB_PORT")
 table_name = os.getenv("DB_TABLE")
 
 
-""" Returns the connection with the DB """
-
-
 def instantiates_db_connection():
+    """Returns the connection from the DB"""
+
     return psycopg2.connect(
         f"dbname={db_name} user={db_user} password={db_pass} host={db_host}, port={db_port}"
     )
 
 
-""" Creates the DB. Only needs to be called once. """
-
-
-def create():   
+def create():
+    """Creates the DB. Only needs to be called once."""
 
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
@@ -74,10 +71,8 @@ def create():
         connection.commit()
 
 
-""" Inserts opportunities if and only if they do not already exist """
-
-
 def ingest_opportunities(job_data):
+    """Inserts opportunities if and only if they do not already exist"""
 
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
@@ -103,10 +98,13 @@ def ingest_opportunities(job_data):
 
 # ----------------- JOB DATA -----------------
 
-""" Rapid API Request """
-
 
 def rapid_response() -> List[object]:
+    """
+    This API call retrieves a formatted response object
+    and returns a List[object] as the result
+    """
+
     url = os.getenv("RAPID_API_URL")
 
     rapid_api_key = os.getenv("RAPID_API_KEY")
@@ -140,10 +138,9 @@ def rapid_response() -> List[object]:
     return rapid_jobs
 
 
-""" LinkedIn WebScrape """
-
-
 def linkedin_response() -> List[object]:
+    """Returns a List[object] which contains web scraped job content"""
+
     url = os.getenv("LINKEDIN_URL")
 
     response = requests.get(url)
@@ -167,8 +164,12 @@ def linkedin_response() -> List[object]:
     linked_in_jobs = []
 
     for elem, date in zip(div_post, date_div_post):
-        # If the value of date.text.strip() has the word "days" in it, we access the number, and compare it with the
-        # value of the command line
+        """
+        If the value of date.text.strip()
+        has the word "days" in it, we access the number,
+        and compare it with the value of the command line
+        """
+
         if "days" in date.text.strip():
             numeric = re.search(r"\d+", date.text.strip())
             formatted_time_integer = int(numeric.group()) if numeric else 0
@@ -197,10 +198,10 @@ def linkedin_response() -> List[object]:
 
 # ----------------- HELPER FUNCTIONS -----------------
 
-""" Lists all oppportunities in DB """
-
 
 def list_all_opportunities() -> List[object]:
+    """Lists all oppportunities in DB"""
+
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
@@ -221,10 +222,9 @@ def list_all_opportunities() -> List[object]:
         connection.close()
 
 
-"""List opportunities shows all the opportunities that have NOT been posted yet"""
-
-
 def list_filtered_opportunities() -> List[object]:
+    """Returns a List[object] of job data that have a status of _processed = 0"""
+
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
@@ -256,10 +256,9 @@ def list_filtered_opportunities() -> List[object]:
     return not_processed_rows
 
 
-"""Recieves data from list_filtered_opporunities() and formats them into a single string"""
-
-
 def format_opportunities(data_results) -> str:
+    """Recieves data from list_filtered_opporunities() and returns a single string message"""
+
     formatted_string = ""
 
     for data_block in data_results:
@@ -273,10 +272,9 @@ def format_opportunities(data_results) -> str:
     return formatted_string
 
 
-"""Updates the status of the jobs after it's been sent by the Discord Bot"""
-
-
 def update_opportunities_status(data_results):
+    """Updates the status of the jobs to _processed = 1 after it's been sent by the discord bot"""
+
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
@@ -296,10 +294,10 @@ def update_opportunities_status(data_results):
 
 # ----------------- RESET FUNCTION (DEBUGGING PURPOSES) -----------------
 
-"""Jobs will be set to not processed (or 0) for testing a debugging purposes"""
-
 
 def reset_processed_status():
+    """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
+
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
@@ -322,10 +320,14 @@ def reset_processed_status():
 
 # ----------------- DISCORD BOT -----------------
 
-""" Executes the message which recieves the formatted message from the format_opportunities() function """
-
 
 async def execute_opportunities_webhook(webhook_url, message):
+    """
+    Executes the message which recieves the formatted message
+    from the format_opportunities() function as well as the webhook
+    url for the respected discord channel
+    """
+
     # Create a dictionary payload for the message content
     payload = {
         "content": " # ✨ :capysmart: NEW JOB POSTINGS BELOW! :capycool: ✨ ",
