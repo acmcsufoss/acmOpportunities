@@ -2,7 +2,7 @@ name: Daily Data Retrieval Automation
 
 on:
   schedule:
-    - cron: "0 0 */2 * *" # Runs everyday at 12AM
+    - cron: "0 0 */2 * *" # Runs every other day at 12AM
 
 jobs:
   run-script:
@@ -12,4 +12,4 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run script
-        run: python ../acmOpportunities/main.py --days-needed 2 # Custom CLI Command
+        run: python main.py --days-needed 2 # Custom CLI Command
