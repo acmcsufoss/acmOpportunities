@@ -267,7 +267,7 @@ def format_opportunities(data_results) -> str:
         _location = data_block["_location"]
         _link = data_block["_link"]
 
-        formatted_string += f"[**{_company}**]({_link})\n```is **NOW** hiring for **{_title}** @{_location}!```\n"
+        formatted_string += f"[**{_company}**]({_link}): {_title} `@{_location}`!\n"
 
     return formatted_string
 
