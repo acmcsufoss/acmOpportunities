@@ -39,7 +39,7 @@ def extract_command_value() -> str:
     return days_needed_variable
 
 
-# ----------------- FOR SQLITE -----------------
+# ----------------- FOR POSTGRESS -----------------
 
 
 db_host = os.getenv("DB_HOST")
@@ -50,7 +50,7 @@ db_port = os.getenv("DB_PORT")
 table_name = os.getenv("DB_TABLE")
 
 
-# Returns the connection with the DB
+""" Returns the connection with the DB """
 
 
 def instantiates_db_connection():
@@ -59,8 +59,10 @@ def instantiates_db_connection():
     )
 
 
-def create():
-    # Creates the DB. Only needs to be called once.
+""" Creates the DB. Only needs to be called once. """
+
+
+def create():   
 
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
@@ -72,8 +74,10 @@ def create():
         connection.commit()
 
 
+""" Inserts opportunities if and only if they do not already exist """
+
+
 def ingest_opportunities(job_data):
-    # Inserts opportunities if and only if they do not already exist
 
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
@@ -130,8 +134,6 @@ def rapid_response() -> List[object]:
             job["_title"] = elem["title"]
             job["_location"] = elem["location"]
             job["_link"] = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
-
-            # print(elem)
 
             rapid_jobs.append(job)
 
