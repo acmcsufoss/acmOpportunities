@@ -320,11 +320,11 @@ async def execute_opportunities_webhook(webhook_url, message):
 
     # Create a dictionary payload for the message content
     payload = {
-        "content": " # ✨ :capysmart: NEW JOB POSTINGS BELOW! :capycool: ✨ ",
+        "content": "# ✨ :capysmart: NEW JOB POSTINGS BELOW! :capycool: ✨",
         "tts": False,
         "embeds": [
             {
-                "title": f"> Job Postings for {date.today()}\n\n\n\n",
+                "title": f"¸„.-•~¹°”ˆ˜¨   🎀 {date.today()} 🎀   ¨˜ˆ”°¹~•-.„¸",
                 "description": message,
                 "color": 0x05A3FF,
             }
@@ -345,29 +345,28 @@ async def execute_opportunities_webhook(webhook_url, message):
         print(f"Failed to send webhook message. Status Code: {response.status_code}")
 
 
-# ----------------- EXECUTE FUNCTIONS -----------------
-
-rapid_data = request_rapidapi_indeed_data()
-linkedin_data = request_linkedin_data()
-
-ingest_opportunities(rapid_data)
-ingest_opportunities(linkedin_data)
-
-
-"""
-To test the code without consuming API requests, call reset_processed_status().
-This function efficiently resets the processed status of all job postings by setting them to _processed = 0.
-By doing so, developers can run tests without wasting valuable API resources.
-To do so, please uncomment the following line of code: 
-"""
-# reset_processed_status()
-
-
-data_results = list_filtered_opportunities()
-formatted_message = format_opportunities(data_results)
-
-
 async def main():
+    rapid_data = request_rapidapi_indeed_data()
+    linkedin_data = request_linkedin_data()
+
+    ingest_opportunities(rapid_data)
+    ingest_opportunities(linkedin_data)
+
+    """
+    To test the code without consuming API requests, call reset_processed_status().
+    This function efficiently resets the processed status of all job postings by setting them to _processed = 0.
+    By doing so, developers can run tests without wasting valuable API resources.
+    To do so, please uncomment the following line of code:
+    """
+    # reset_processed_status()
+
+    data_results = list_filtered_opportunities()
+    if len(data_results) == 0:
+        print("There are no job opportunities today.")
+        exit()
+
+    formatted_message = format_opportunities(data_results)
+
     discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
     await execute_opportunities_webhook(discord_webhook, formatted_message)
