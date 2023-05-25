@@ -23,7 +23,6 @@ jobs:
         run: python main.py --days-needed 2 # Custom CLI Command
         env:
           RAPID_API_KEY: ${{ secrets.RAPID_API_KEY}}
-          RAPID_API_HOST: ${{ secrets.RAPID_API_HOST}}
           RAPID_API_URL: ${{ secrets.RAPID_API_URL}}
           LINKEDIN_URL: ${{ secrets.LINKEDIN_URL}}
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN}}
