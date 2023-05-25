@@ -98,13 +98,11 @@ def request_rapidapi_indeed_data() -> List[object]:
     """
 
     url = os.getenv("RAPID_API_URL")
-
     rapid_api_key = os.getenv("RAPID_API_KEY")
-    rapid_api_host = os.getenv("RAPID_API_HOST")
 
     headers = {
         "X-RapidAPI-Key": rapid_api_key,
-        "X-RapidAPI-Host": rapid_api_host,
+        "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
     }
 
     rapid_jobs = []
