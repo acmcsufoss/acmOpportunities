@@ -190,7 +190,6 @@ def linkedin_response() -> List[object]:
                 ].split("?")[0]
 
                 linked_in_jobs.append(job)
-
     return linked_in_jobs
 
 
