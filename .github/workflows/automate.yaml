@@ -25,7 +25,6 @@ jobs:
           RAPID_API_KEY: ${{ secrets.RAPID_API_KEY}}
           RAPID_API_URL: ${{ secrets.RAPID_API_URL}}
           LINKEDIN_URL: ${{ secrets.LINKEDIN_URL}}
-          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN}}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK}}
           DB_URI: ${{ secrets.DB_URI}}
           DB_TABLE: ${{ secrets.DB_TABLE}}
