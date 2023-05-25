@@ -1,14 +1,12 @@
+import psycopg2
 import requests
 import os
 import json
 import asyncio
-import discord
-import re
-import psycopg2
 import argparse
-from discord import Webhook
 from typing import List
 from bs4 import BeautifulSoup
+import re
 from datetime import date
 from dotenv import load_dotenv
 
@@ -42,20 +40,14 @@ def extract_command_value() -> str:
 # ----------------- FOR POSTGRESS -----------------
 
 
-db_host = os.getenv("DB_HOST")
-db_user = os.getenv("DB_USER")
-db_pass = os.getenv("DB_PASS")
-db_name = os.getenv("DB_NAME")
-db_port = os.getenv("DB_PORT")
+db_uri = os.getenv("DB_URI")
 table_name = os.getenv("DB_TABLE")
 
 
 def instantiates_db_connection():
     """Returns the connection from the DB"""
 
-    return psycopg2.connect(
-        f"dbname={db_name} user={db_user} password={db_pass} host={db_host}, port={db_port}"
-    )
+    return psycopg2.connect(db_uri)
 
 
 def create():
