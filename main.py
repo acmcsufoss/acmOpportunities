@@ -99,7 +99,7 @@ def ingest_opportunities(job_data):
 # ----------------- JOB DATA -----------------
 
 
-def rapid_response() -> List[object]:
+def request_rapidapi_indeed_data() -> List[object]:
     """
     This API call retrieves a formatted response object
     and returns a List[object] as the result
@@ -138,7 +138,7 @@ def rapid_response() -> List[object]:
     return rapid_jobs
 
 
-def linkedin_response() -> List[object]:
+def request_linkedin_data() -> List[object]:
     """Returns a List[object] which contains web scraped job content"""
 
     url = os.getenv("LINKEDIN_URL")
@@ -267,7 +267,7 @@ def format_opportunities(data_results) -> str:
         _location = data_block["_location"]
         _link = data_block["_link"]
 
-        formatted_string += f"\n**- [{_company}]({_link})** is **NOW** hiring for **{_title}** @{_location}! \n\n"
+        formatted_string += f"[**{_company}**]({_link})\n```is **NOW** hiring for **{_title}** @{_location}!```\n"
 
     return formatted_string
 
@@ -357,11 +357,21 @@ async def execute_opportunities_webhook(webhook_url, message):
 
 # ----------------- EXECUTE FUNCTIONS -----------------
 
-rapid_data = rapid_response()
-linkedin_data = linkedin_response()
+rapid_data = request_rapidapi_indeed_data()
+linkedin_data = request_linkedin_data()
 
 ingest_opportunities(rapid_data)
 ingest_opportunities(linkedin_data)
+
+
+"""
+To test the code without consuming API requests, call reset_processed_status().
+This function efficiently resets the processed status of all job postings by setting them to _processed = 0.
+By doing so, developers can run tests without wasting valuable API resources.
+To do so, please uncomment the following line of code: 
+"""
+# reset_processed_status()
+
 
 data_results = list_filtered_opportunities()
 formatted_message = format_opportunities(data_results)
