@@ -357,25 +357,23 @@ async def execute_opportunities_webhook(webhook_url, message):
 
 # ----------------- EXECUTE FUNCTIONS -----------------
 
-# ----- Uncomment to execute functions -----
+rapid_data = rapid_response()
+linkedin_data = linkedin_response()
 
-# rapid_data = rapid_response()
-# linkedin_data = linkedin_response()
+ingest_opportunities(rapid_data)
+ingest_opportunities(linkedin_data)
 
-# ingest_opportunities(rapid_data)
-# ingest_opportunities(linkedin_data)
-
-# data_results = list_filtered_opportunities()
-# formatted_message = format_opportunities(data_results)
+data_results = list_filtered_opportunities()
+formatted_message = format_opportunities(data_results)
 
 
-# async def main():
-#     discord_webhook = os.getenv("DISCORD_WEBHOOK")
+async def main():
+    discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-#     await execute_opportunities_webhook(discord_webhook, formatted_message)
+    await execute_opportunities_webhook(discord_webhook, formatted_message)
 
-#     update_opportunities_status(data_results)
+    update_opportunities_status(data_results)
 
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
