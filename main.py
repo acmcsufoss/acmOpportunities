@@ -320,7 +320,7 @@ async def execute_opportunities_webhook(webhook_url, message):
 
     # Create a dictionary payload for the message content
     payload = {
-        "content": "# ✨ :capysmart: NEW JOB POSTINGS BELOW! :capycool: ✨",
+        "content": "# ✨ NEW JOB POSTINGS BELOW! ✨",
         "tts": False,
         "embeds": [
             {
