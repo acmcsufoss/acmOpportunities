@@ -190,7 +190,7 @@ def request_linkedin_data() -> List[object]:
 
 
 def list_all_opportunities() -> List[object]:
-    """Lists all oppportunities in DB"""
+    """Lists all oppportunities in DB as well as returns them"""
 
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
@@ -199,17 +199,31 @@ def list_all_opportunities() -> List[object]:
 
         rows = cursor.fetchall()
 
+        all_jobs = (
+            []
+        )  # A list of objects holding all jobs (processed and not processed)
+
         for row in rows:
-            _company, _title, _location, _link, _processed = row
+            job = {}
 
-            print("Company:", _company)
-            print("Title:", _title)
-            print("Location:", _location)
-            print("Link:", _link)
-            print("Processed:", _processed)
-            print(" ")
+            job["_company"] = row[0]
+            job["_title"] = row[1]
+            job["_location"] = row[2]
+            job["_link"] = row[3]
+            job["_processed"] = row[4]
 
-        connection.close()
+            # Uncomment to view all jobs
+
+            # _company, _title, _location, _link, _processed = row
+
+            # print("Company:", _company)
+            # print("Title:", _title)
+            # print("Location:", _location)
+            # print("Link:", _link)
+            # print("Processed:", _processed)
+            # print(" ")
+
+    return all_jobs
 
 
 def list_filtered_opportunities() -> List[object]:
@@ -232,13 +246,15 @@ def list_filtered_opportunities() -> List[object]:
             job["_link"] = row[3]
             job["_processed"] = row[4]
 
-            # Uncomment to view jobs up to 5 that have not been posted
+            # Uncomment to view up to 10 jobs that have not been posted
 
-            # print("Company:", row[0])
-            # print("Title:", row[1])
-            # print("Location:", row[2])
-            # print("Link:", row[3])
-            # print("Processed:", row[4])
+            # _company, _title, _location, _link, _processed = row
+
+            # print("Company:", _company)
+            # print("Title:", _title)
+            # print("Location:", _location)
+            # print("Link:", _link)
+            # print("Processed:", _processed)
             # print(" ")
 
             not_processed_rows.append(job)
@@ -356,7 +372,8 @@ async def main():
     To test the code without consuming API requests, call reset_processed_status().
     This function efficiently resets the processed status of all job postings by setting them to _processed = 0.
     By doing so, developers can run tests without wasting valuable API resources.
-    To do so, please uncomment the following line of code:
+    To do so, please comment the function calls above this comment.
+    After, please uncomment the following line of code:
     """
     # reset_processed_status()
 
