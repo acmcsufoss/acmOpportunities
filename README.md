@@ -15,7 +15,7 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 
 ## Example response
 
-![image](https://github.com/acmcsufoss/acmOpportunities/assets/116927138/7fb22b06-4b63-4be3-bab5-473095e14fc3)
+![image](https://github.com/acmcsufoss/acmOpportunities/assets/116927138/479c0bbf-5e81-4503-ac01-43af542e1293)
 
 ---
 
