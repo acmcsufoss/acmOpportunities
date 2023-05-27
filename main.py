@@ -123,7 +123,11 @@ def request_rapidapi_indeed_data() -> List[object]:
             job["_location"] = elem["location"]
             job["_link"] = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
 
-            rapid_jobs.append(job)
+            if (
+                "senior" not in job["_title"].lower()
+                and "sr" not in job["_title"].lower()
+            ):  # Filters out senior positions to ensure entry only level positions
+                rapid_jobs.append(job)
 
     return rapid_jobs
 
@@ -182,7 +186,12 @@ def request_linkedin_data() -> List[object]:
                     "href"
                 ].split("?")[0]
 
-                linked_in_jobs.append(job)
+                if (
+                    "senior" not in job["_title"].lower()
+                    and "sr" not in job["_title"].lower()
+                ):  # Filters out senior positions to ensure entry only level positions
+                    linked_in_jobs.append(job)
+
     return linked_in_jobs
 
 
