@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
 
+
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
 
@@ -116,7 +117,7 @@ def request_rapidapi_indeed_data() -> List[object]:
         numeric = re.search(r"\d+", time)
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
-        if len(rapid_jobs) <= 5 and int(command_line_value) >= formatted_time_integer:
+        if len(rapid_jobs) <= 10 and int(command_line_value) >= formatted_time_integer:
             job = {}
             job["_company"] = elem["company_name"]
             job["_title"] = elem["title"]
@@ -169,7 +170,7 @@ def request_linkedin_data() -> List[object]:
             formatted_time_integer = int(numeric.group()) if numeric else 0
 
             if (
-                len(linked_in_jobs) <= 5
+                len(linked_in_jobs) <= 10
                 and int(command_line_value) >= formatted_time_integer
             ):
                 job = {}
@@ -198,50 +199,13 @@ def request_linkedin_data() -> List[object]:
 # ----------------- HELPER FUNCTIONS -----------------
 
 
-def list_all_opportunities() -> List[object]:
-    """Lists all oppportunities in DB as well as returns them"""
-
-    with instantiates_db_connection() as connection:
-        cursor = connection.cursor()
-
-        cursor.execute(f"SELECT * FROM {table_name}")
-
-        rows = cursor.fetchall()
-
-        all_jobs = (
-            []
-        )  # A list of objects holding all jobs (processed and not processed)
-
-        for row in rows:
-            job = {}
-
-            job["_company"] = row[0]
-            job["_title"] = row[1]
-            job["_location"] = row[2]
-            job["_link"] = row[3]
-            job["_processed"] = row[4]
-
-            # Uncomment to view all jobs
-
-            # _company, _title, _location, _link, _processed = row
-
-            # print("Company:", _company)
-            # print("Title:", _title)
-            # print("Location:", _location)
-            # print("Link:", _link)
-            # print("Processed:", _processed)
-            # print(" ")
-
-    return all_jobs
-
-
 def list_filtered_opportunities() -> List[object]:
     """Returns a List[object] of job data that have a status of _processed = 0"""
 
     with instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
-        cursor.execute(f"SELECT * FROM {table_name} WHERE _processed = 0 LIMIT 10")
+        cursor.execute(f"SELECT * FROM {table_name} WHERE _processed = 0 LIMIT 20")
         rows = cursor.fetchall()
 
         not_processed_rows = []
