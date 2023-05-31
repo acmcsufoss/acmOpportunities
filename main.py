@@ -7,7 +7,8 @@ import argparse
 from typing import List
 from bs4 import BeautifulSoup
 import re
-from datetime import date
+from datetime import date, datetime
+import utility as utils 
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -88,7 +89,6 @@ def ingest_opportunities(job_data):
                 )
         connection.commit()
 
-
 # ----------------- JOB DATA -----------------
 
 
@@ -117,7 +117,7 @@ def request_rapidapi_indeed_data() -> List[object]:
         numeric = re.search(r"\d+", time)
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
-        if len(rapid_jobs) <= 10 and int(command_line_value) >= formatted_time_integer:
+        if len(rapid_jobs) < 10 and int(command_line_value) > formatted_time_integer:
             job = {}
             job["_company"] = elem["company_name"]
             job["_title"] = elem["title"]
@@ -148,44 +148,27 @@ def request_linkedin_data() -> List[object]:
         "div",
         class_="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
     )
-
-    date_div_post = parse_content.find_all(
-        "time",
-        class_="job-search-card__listdate",
-    )  # Recieves all the job posting dates
-
+   
     command_line_value = extract_command_value()  # Extracts command-line value
 
     linked_in_jobs = []
 
-    for elem, date in zip(div_post, date_div_post):
-        """
-        If the value of date.text.strip()
-        has the word "days" in it, we access the number,
-        and compare it with the value of the command line
-        """
-
-        if "days" in date.text.strip():
-            numeric = re.search(r"\d+", date.text.strip())
-            formatted_time_integer = int(numeric.group()) if numeric else 0
-
-            if (
-                len(linked_in_jobs) <= 10
-                and int(command_line_value) >= formatted_time_integer
-            ):
+    for elem in div_post:
+   
+        all_dates = elem.find("time")
+        datetime_val = all_dates.get("datetime")
+        date_object = datetime.strptime(datetime_val, "%Y-%m-%d")
+       
+        day_differences = utils.calculate_day_difference(date_object) 
+        # Calculates date difference from job postings to the relevant day
+    
+       
+        if (len(linked_in_jobs) < 10  and int(command_line_value) > day_differences):
                 job = {}
-                job["_company"] = elem.find(
-                    "h4", class_="base-search-card__subtitle"
-                ).text.strip()
-                job["_title"] = elem.find(
-                    "h3", class_="base-search-card__title"
-                ).text.strip()
-                job["_location"] = elem.find(
-                    "span", class_="job-search-card__location"
-                ).text.strip()
-                job["_link"] = elem.find("a", class_="base-card__full-link")[
-                    "href"
-                ].split("?")[0]
+                job["_company"] = elem.find("a", class_="hidden-nested-link").text.strip()
+                job["_title"] = elem.find("h3", class_="base-search-card__title").text.strip()
+                job["_location"] = elem.find("span", class_="job-search-card__location").text.strip()
+                job["_link"] = elem.find("a", class_="base-card__full-link")["href"] 
 
                 if (
                     "senior" not in job["_title"].lower()
@@ -194,7 +177,6 @@ def request_linkedin_data() -> List[object]:
                     linked_in_jobs.append(job)
 
     return linked_in_jobs
-
 
 # ----------------- HELPER FUNCTIONS -----------------
 
