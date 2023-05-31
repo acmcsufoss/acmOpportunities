@@ -1,4 +1,12 @@
 from datetime import date, datetime
+import psycopg2
+import os
+
+def instantiates_db_connection():
+    """Returns the connection from the DB"""
+    
+    db_uri = os.getenv("DB_URI")
+    return psycopg2.connect(db_uri)
 
 
 def calculate_day_difference(job_post_date: datetime) -> int:

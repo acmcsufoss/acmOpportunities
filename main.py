@@ -8,7 +8,8 @@ from typing import List
 from bs4 import BeautifulSoup
 import re
 from datetime import date, datetime
-import utility as utils 
+import utility as utils
+import opportunity as opps 
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -39,23 +40,14 @@ def extract_command_value() -> str:
     return days_needed_variable
 
 
-# ----------------- FOR POSTGRESS -----------------
-
-
-db_uri = os.getenv("DB_URI")
+# ----------------- FOR POSTGRES -----------------
 table_name = os.getenv("DB_TABLE")
-
-
-def instantiates_db_connection():
-    """Returns the connection from the DB"""
-
-    return psycopg2.connect(db_uri)
 
 
 def create():
     """Creates the DB. Only needs to be called once."""
 
-    with instantiates_db_connection() as connection:
+    with utils.instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -68,7 +60,7 @@ def create():
 def ingest_opportunities(job_data):
     """Inserts opportunities if and only if they do not already exist"""
 
-    with instantiates_db_connection() as connection:
+    with utils.instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
         for job in job_data:
@@ -147,7 +139,7 @@ def request_linkedin_data() -> List[object]:
     div_post = parse_content.find_all(
         "div",
         class_="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
-    )
+    ) # TODO Narrow this down where it still recieves the same result
    
     command_line_value = extract_command_value()  # Extracts command-line value
 
@@ -181,42 +173,6 @@ def request_linkedin_data() -> List[object]:
 # ----------------- HELPER FUNCTIONS -----------------
 
 
-def list_filtered_opportunities() -> List[object]:
-    """Returns a List[object] of job data that have a status of _processed = 0"""
-
-    with instantiates_db_connection() as connection:
-        cursor = connection.cursor()
-
-        cursor.execute(f"SELECT * FROM {table_name} WHERE _processed = 0 LIMIT 20")
-        rows = cursor.fetchall()
-
-        not_processed_rows = []
-
-        for row in rows:
-            job = {}
-
-            job["_company"] = row[0]
-            job["_title"] = row[1]
-            job["_location"] = row[2]
-            job["_link"] = row[3]
-            job["_processed"] = row[4]
-
-            # Uncomment to view up to 10 jobs that have not been posted
-
-            # _company, _title, _location, _link, _processed = row
-
-            # print("Company:", _company)
-            # print("Title:", _title)
-            # print("Location:", _location)
-            # print("Link:", _link)
-            # print("Processed:", _processed)
-            # print(" ")
-
-            not_processed_rows.append(job)
-
-    return not_processed_rows
-
-
 def format_opportunities(data_results) -> str:
     """Recieves data from list_filtered_opporunities() and returns a single string message"""
 
@@ -236,7 +192,7 @@ def format_opportunities(data_results) -> str:
 def update_opportunities_status(data_results):
     """Updates the status of the jobs to _processed = 1 after it's been sent by the discord bot"""
 
-    with instantiates_db_connection() as connection:
+    with utils.instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
         for data_block in data_results:
@@ -259,7 +215,7 @@ def update_opportunities_status(data_results):
 def reset_processed_status():
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
-    with instantiates_db_connection() as connection:
+    with utils.instantiates_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -332,7 +288,7 @@ async def main():
     """
     # reset_processed_status()
 
-    data_results = list_filtered_opportunities()
+    data_results = opps.list_filtered_opportunities()
     if len(data_results) == 0:
         print("There are no job opportunities today.")
         exit()
