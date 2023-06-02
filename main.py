@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import re
 from datetime import date, datetime
 import utility as utils
-import opportunity as opps 
+import opportunity as opps
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -47,7 +47,7 @@ table_name = os.getenv("DB_TABLE")
 def create():
     """Creates the DB. Only needs to be called once."""
 
-    with utils.instantiates_db_connection() as connection:
+    with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -60,7 +60,7 @@ def create():
 def ingest_opportunities(job_data):
     """Inserts opportunities if and only if they do not already exist"""
 
-    with utils.instantiates_db_connection() as connection:
+    with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         for job in job_data:
@@ -80,6 +80,7 @@ def ingest_opportunities(job_data):
                     (job["_company"], job["_title"], job["_location"], job["_link"], 0),
                 )
         connection.commit()
+
 
 # ----------------- JOB DATA -----------------
 
@@ -139,36 +140,38 @@ def request_linkedin_data() -> List[object]:
     div_post = parse_content.find_all(
         "div",
         class_="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
-    ) # TODO Narrow this down where it still recieves the same result
-   
+    )  # TODO Narrow this down where it still recieves the same result
+
     command_line_value = extract_command_value()  # Extracts command-line value
 
     linked_in_jobs = []
 
     for elem in div_post:
-   
         all_dates = elem.find("time")
         datetime_val = all_dates.get("datetime")
         date_object = datetime.strptime(datetime_val, "%Y-%m-%d")
-       
-        day_differences = utils.calculate_day_difference(date_object) 
+
+        day_differences = utils.calculate_day_difference(date_object)
         # Calculates date difference from job postings to the relevant day
-    
-       
-        if (len(linked_in_jobs) < 10  and int(command_line_value) > day_differences):
-                job = {}
-                job["_company"] = elem.find("a", class_="hidden-nested-link").text.strip()
-                job["_title"] = elem.find("h3", class_="base-search-card__title").text.strip()
-                job["_location"] = elem.find("span", class_="job-search-card__location").text.strip()
-                job["_link"] = elem.find("a", class_="base-card__full-link")["href"] 
 
-                if (
-                    "senior" not in job["_title"].lower()
-                    and "sr" not in job["_title"].lower()
-                ):  # Filters out senior positions to ensure entry only level positions
-                    linked_in_jobs.append(job)
+        if len(linked_in_jobs) < 10 and int(command_line_value) > day_differences:
+            job = {}
+            job["_company"] = elem.find("a", class_="hidden-nested-link").text.strip()
+            job["_title"] = elem.find(
+                "h3", class_="base-search-card__title"
+            ).text.strip()
+            job["_location"] = elem.find(
+                "span", class_="job-search-card__location"
+            ).text.strip()
+            job["_link"] = elem.find("a", class_="base-card__full-link")["href"]
 
+            if (
+                "senior" not in job["_title"].lower()
+                and "sr" not in job["_title"].lower()
+            ):  # Filters out senior positions to ensure entry only level positions
+                linked_in_jobs.append(job)
     return linked_in_jobs
+
 
 # ----------------- HELPER FUNCTIONS -----------------
 
@@ -189,37 +192,17 @@ def format_opportunities(data_results) -> str:
     return formatted_string
 
 
-def update_opportunities_status(data_results):
-    """Updates the status of the jobs to _processed = 1 after it's been sent by the discord bot"""
-
-    with utils.instantiates_db_connection() as connection:
-        cursor = connection.cursor()
-
-        for data_block in data_results:
-            cursor.execute(
-                f"UPDATE {table_name} SET _processed = %s WHERE _company = %s  AND _title = %s  AND _location = %s",
-                (
-                    1,
-                    data_block["_company"],
-                    data_block["_title"],
-                    data_block["_location"],
-                ),
-            )
-
-        connection.commit()
-
-
 # ----------------- RESET FUNCTION (DEBUGGING PURPOSES) -----------------
 
 
 def reset_processed_status():
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
-    with utils.instantiates_db_connection() as connection:
+    with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
-            f"SELECT _company, _title, _location FROM {table_name} WHERE _processed = 1"
+            f"SELECT _company, _title, _location FROM {table_name} WHERE _processed = 1 LIMIT 20"
         )
 
         rows = cursor.fetchall()
@@ -273,11 +256,15 @@ async def execute_opportunities_webhook(webhook_url, message):
 
 
 async def main():
-    rapid_data = request_rapidapi_indeed_data()
-    linkedin_data = request_linkedin_data()
+    # rapid_data = request_rapidapi_indeed_data()
+    # linkedin_data = request_linkedin_data()
 
-    ingest_opportunities(rapid_data)
-    ingest_opportunities(linkedin_data)
+    # TODO - Call the function opps.gpt_job_analyzer() for both rapid_data and linkedin_data
+    # TODO - After calling this function, store in a variable and then call ingest_opportunities() using that variable as an argument
+    # Example for testing -> opps.gpt_job_analyzer(request_linkedin_data())
+
+    # ingest_opportunities(rapid_data)
+    # ingest_opportunities(linkedin_data)
 
     """
     To test the code without consuming API requests, call reset_processed_status().
@@ -288,19 +275,19 @@ async def main():
     """
     # reset_processed_status()
 
-    data_results = opps.list_filtered_opportunities()
-    if len(data_results) == 0:
-        print("There are no job opportunities today.")
-        exit()
+    # data_results = opps.list_filtered_opportunities(True)
+    # if len(data_results) == 0:
+    #     print("There are no job opportunities today.")
+    #     exit()
 
-    formatted_message = format_opportunities(data_results)
+    # formatted_message = format_opportunities(data_results)
 
-    discord_webhook = os.getenv("DISCORD_WEBHOOK")
+    # discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-    await execute_opportunities_webhook(discord_webhook, formatted_message)
+    # await execute_opportunities_webhook(discord_webhook, formatted_message)
 
-    update_opportunities_status(data_results)
+    # opps.update_opportunities_status(data_results)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
