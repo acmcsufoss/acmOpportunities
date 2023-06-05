@@ -14,14 +14,43 @@ table_name = os.getenv("DB_TABLE")
 
 @dataclass
 class Opportunity:
-    """Class for ..."""
+    """Struct to hold data for an opportunity"""
 
-    # TODO
     _company: str
     _title: str
     _location: str
     _link: str
     _processed: bool
+
+
+def ingest_opportunities(job_data):
+    """Inserts opportunities if and only if they do not already exist"""
+    with utils.instantiate_db_connection() as connection:
+        cursor = connection.cursor()
+
+        for job in job_data:
+            cursor.execute(
+                f"SELECT * FROM {table_name} WHERE _company = %(_company)s AND _title = %(_title)s AND _location = %(_location)s",
+                {
+                    "_company": job._company,
+                    "_title": job._title,
+                    "_location": job._location,
+                },
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                cursor.execute(
+                    f"INSERT INTO {table_name} (_company, _title, _location, _link, _processed) VALUES (%s, %s, %s, %s, %s)",
+                    (
+                        job._company,
+                        job._title,
+                        job._location,
+                        job._link,
+                        job._processed,
+                    ),
+                )
+        connection.commit()
 
 
 def list_all_opportunities(debug: bool) -> List[Opportunity]:
@@ -43,7 +72,7 @@ def list_filtered_opportunities(debug: bool) -> List[Opportunity]:
     with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
-        cursor.execute(f"SELECT * FROM {table_name} WHERE _processed = 0 LIMIT 20")
+        cursor.execute(f"SELECT * FROM {table_name} WHERE _processed = 0 LIMIT 15")
 
         rows = cursor.fetchall()
 
@@ -83,9 +112,9 @@ def update_opportunities_status(data_results):
                 f"UPDATE {table_name} SET _processed = %s WHERE _company = %s  AND _title = %s  AND _location = %s",
                 (
                     1,
-                    data_block["_company"],
-                    data_block["_title"],
-                    data_block["_location"],
+                    data_block._company,
+                    data_block._title,
+                    data_block._location,
                 ),
             )
 
@@ -97,7 +126,7 @@ def gpt_job_analyzer(list_of_opps) -> List[Opportunity]:
 
     print(f"The jobs original length before filtering: {len(list_of_opps)}")
 
-    prompt = "As a member of the Association of Computer Machinery (ACM) club at California State University, Fullerton, your role is to assess job opportunities for college students in the tech industry, particularly those pursuing Computer Science majors and seeking entry-level positions. Your objective is to evaluate each opportunity and decide whether it should be included in our program. To aid in this decision-making process, please provide a True/False as List[str] for each job that aligns with our goal of offering entry-level tech-related positions to college students. Please state True/False only one after as a proper List[str]. Do not add any job description. \n\n"
+    prompt = "As a member of the Association of Computer Machinery (ACM) club at California State University, Fullerton, your role is to assess job opportunities for college students in the tech industry, particularly those pursuing Computer Science majors and seeking entry-level positions. Your objective is to evaluate each opportunity and decide whether it should be included in our program. To aid in this decision-making process, please provide a True/False as a list of booleans List[bool] (so no quotes) for each job that aligns with our goal of offering entry-level tech-related positions to college students. Please state True/False as a List of booleans List[bool] only one after only, again only since I need to parse this. Do not add any job description or comments, just only say True/False in a proper list as I need to parse this response. \n\n"
 
     for opp in list_of_opps:
         prompt += "\nCompany: " + opp["_company"]
@@ -109,18 +138,23 @@ def gpt_job_analyzer(list_of_opps) -> List[Opportunity]:
         Provider.You,
         prompt=prompt,
     )
-    # TODO - Fix formatting issue with the `response`
+
     parsed_values = parse_gpt_values(response)
 
     return determine_job_list(list_of_opps, parsed_values)
 
 
 def parse_gpt_values(gpt_response) -> List[bool]:
-    """Helper function to parse the gpt response"""
-    # TODO - Possibility of using ast, specifically ".literal_eval()" method
+    """Helper function to parse the gpt response from a str -> List[bool]"""
     # https://docs.python.org/3/library/ast.html - Go down to .literal_eval()
+    # https://www.geeksforgeeks.org/python-isinstance-method/
 
-    return [r == "True" for r in gpt_response]
+    parsed_values = ast.literal_eval(gpt_response)
+    bool_list = []
+    if isinstance(parsed_values, list):
+        bool_list = [bool(value) for value in parsed_values]
+
+    return bool_list
 
 
 def determine_job_list(list_of_opps, gpt_response) -> List[Opportunity]:
@@ -128,10 +162,12 @@ def determine_job_list(list_of_opps, gpt_response) -> List[Opportunity]:
     structured_opps = []
 
     for indx, opp in enumerate(list_of_opps):
-        if gpt_response[indx]:
+        if gpt_response[
+            indx
+        ]:  # If the current response is True (of type bool) create a new Opportunity and append to the list
             opportunity = Opportunity(
                 opp["_company"], opp["_title"], opp["_location"], opp["_link"], 0
             )
             structured_opps.append(opportunity)
-
+    print(f"Length after GPT analyzed the jobs: {len(structured_opps)}")
     return structured_opps

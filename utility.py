@@ -13,11 +13,13 @@ def instantiate_db_connection():
 def calculate_day_difference(job_post_date: datetime) -> int:
     """Calculates day difference for job posting times to the relevant day today"""
 
-    today_date_str = date.today().strftime(
-        "%Y-%m-%d"
-    )  # https://www.geeksforgeeks.org/python-strftime-function/
-    our_date_object = datetime.strptime(
-        today_date_str, "%Y-%m-%d"
-    )  # https://www.geeksforgeeks.org/python-datetime-strptime-function/
+    today_date = date.today()
+    job_date = job_post_date.date()
 
-    return our_date_object.day - job_post_date.day
+    # https://www.geeksforgeeks.org/python-datetime-toordinal-method-with-example/
+    today_ordinal = today_date.toordinal()
+    job_ordinal = job_date.toordinal()
+
+    day_difference = today_ordinal - job_ordinal
+
+    return day_difference
