@@ -234,36 +234,36 @@ async def execute_opportunities_webhook(webhook_url, message):
         print(f"Failed to send webhook message. Status Code: {response.status_code}")
 
 
-async def main():
-    rapid_data = opps.gpt_job_analyzer(request_rapidapi_indeed_data())
-    linkedin_data = opps.gpt_job_analyzer(request_linkedin_data())
+# async def main():
+#     rapid_data = opps.gpt_job_analyzer(request_rapidapi_indeed_data())
+#     linkedin_data = opps.gpt_job_analyzer(request_linkedin_data())
 
-    opps.ingest_opportunities(rapid_data)
-    opps.ingest_opportunities(linkedin_data)
+#     opps.ingest_opportunities(rapid_data)
+#     opps.ingest_opportunities(linkedin_data)
 
-    """
-    To test the code without consuming API requests, call reset_processed_status().
-    This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
-    By doing so, developers can run tests without wasting valuable API resources.
-    To do so, please comment the function calls above this comment.
-    After, please uncomment the following line of code:
-    """
-    # reset_processed_status()
+#     """
+#     To test the code without consuming API requests, call reset_processed_status().
+#     This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
+#     By doing so, developers can run tests without wasting valuable API resources.
+#     To do so, please comment the function calls above this comment.
+#     After, please uncomment the following line of code:
+#     """
+#     # reset_processed_status()
 
-    data_results = opps.list_opportunities(True, filtered=True)
+#     data_results = opps.list_opportunities(True, filtered=True)
 
-    if len(data_results) == 0:
-        print("There are no job opportunities today.")
-        exit()
+#     if len(data_results) == 0:
+#         print("There are no job opportunities today.")
+#         exit()
 
-    formatted_message = format_opportunities(data_results)
+#     formatted_message = format_opportunities(data_results)
 
-    discord_webhook = os.getenv("DISCORD_WEBHOOK")
+#     discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-    await execute_opportunities_webhook(discord_webhook, formatted_message)
+#     await execute_opportunities_webhook(discord_webhook, formatted_message)
 
-    opps.update_opportunities_status(data_results)
+#     opps.update_opportunities_status(data_results)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
