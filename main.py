@@ -10,6 +10,7 @@ import re
 from datetime import date, datetime
 import utility as utils
 import opportunity as opps
+from opportunity import Opportunity
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -60,7 +61,7 @@ def create():
 # ----------------- JOB DATA -----------------
 
 
-def request_rapidapi_indeed_data() -> List[object]:
+def request_rapidapi_indeed_data() -> List[Opportunity]:
     """
     This API call retrieves a formatted response object
     and returns a List[object] as the result
@@ -86,22 +87,24 @@ def request_rapidapi_indeed_data() -> List[object]:
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
         if len(rapid_jobs) < 10 and int(command_line_value) > formatted_time_integer:
-            job = {}
-            job["_company"] = elem["company_name"]
-            job["_title"] = elem["title"]
-            job["_location"] = elem["location"]
-            job["_link"] = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
+            _company = elem["company_name"]
+            _title = elem["title"]
+            _location = elem["location"]
+            _link = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
+            _processed = 0
+
+            opportunity = Opportunity(_company, _title, _location, _link, _processed)
 
             if (
-                "senior" not in job["_title"].lower()
-                and "sr" not in job["_title"].lower()
+                "senior" not in opportunity._title.lower()
+                and "sr" not in opportunity._title.lower()
             ):  # Filters out senior positions to ensure entry only level positions
-                rapid_jobs.append(job)
+                rapid_jobs.append(opportunity)
 
     return rapid_jobs
 
 
-def request_linkedin_data() -> List[object]:
+def request_linkedin_data() -> List[Opportunity]:
     """Returns a List[object] which contains web scraped job content"""
 
     url = os.getenv("LINKEDIN_URL")
@@ -130,23 +133,21 @@ def request_linkedin_data() -> List[object]:
         # Calculates date difference from job postings to the relevant day
 
         if len(linked_in_jobs) < 10 and int(command_line_value) > day_differences:
-            job = {}
-            job["_company"] = elem.find("a", class_="hidden-nested-link").text.strip()
-            job["_title"] = elem.find(
-                "h3", class_="base-search-card__title"
-            ).text.strip()
-            job["_location"] = elem.find(
+            _company = elem.find("a", class_="hidden-nested-link").text.strip()
+            _title = elem.find("h3", class_="base-search-card__title").text.strip()
+            _location = elem.find(
                 "span", class_="job-search-card__location"
             ).text.strip()
-            job["_link"] = elem.find("a", class_="base-card__full-link")["href"].split(
-                "?"
-            )[0]
+            _link = elem.find("a", class_="base-card__full-link")["href"].split("?")[0]
+            _processed = 0
+
+            opportunity = Opportunity(_company, _title, _location, _link, _processed)
 
             if (
-                "senior" not in job["_title"].lower()
-                and "sr" not in job["_title"].lower()
+                "senior" not in opportunity._title.lower()
+                and "sr" not in opportunity._title.lower()
             ):  # Filters out senior positions to ensure entry only level positions
-                linked_in_jobs.append(job)
+                linked_in_jobs.append(opportunity)
 
     return linked_in_jobs
 
@@ -233,36 +234,36 @@ async def execute_opportunities_webhook(webhook_url, message):
         print(f"Failed to send webhook message. Status Code: {response.status_code}")
 
 
-# async def main():
-#     rapid_data = opps.gpt_job_analyzer(request_rapidapi_indeed_data())
-#     linkedin_data = opps.gpt_job_analyzer(request_linkedin_data())
+async def main():
+    rapid_data = opps.gpt_job_analyzer(request_rapidapi_indeed_data())
+    linkedin_data = opps.gpt_job_analyzer(request_linkedin_data())
 
-#     opps.ingest_opportunities(rapid_data)
-#     opps.ingest_opportunities(linkedin_data)
+    opps.ingest_opportunities(rapid_data)
+    opps.ingest_opportunities(linkedin_data)
 
-#     """
-#     To test the code without consuming API requests, call reset_processed_status().
-#     This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
-#     By doing so, developers can run tests without wasting valuable API resources.
-#     To do so, please comment the function calls above this comment.
-#     After, please uncomment the following line of code:
-#     """
-#     # reset_processed_status()
+    """
+    To test the code without consuming API requests, call reset_processed_status().
+    This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
+    By doing so, developers can run tests without wasting valuable API resources.
+    To do so, please comment the function calls above this comment.
+    After, please uncomment the following line of code:
+    """
+    # reset_processed_status()
 
-#     data_results = opps.list_filtered_opportunities(True)
+    data_results = opps.list_opportunities(True, filtered=True)
 
-#     if len(data_results) == 0:
-#         print("There are no job opportunities today.")
-#         exit()
+    if len(data_results) == 0:
+        print("There are no job opportunities today.")
+        exit()
 
-#     formatted_message = format_opportunities(data_results)
+    formatted_message = format_opportunities(data_results)
 
-#     discord_webhook = os.getenv("DISCORD_WEBHOOK")
+    discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-#     await execute_opportunities_webhook(discord_webhook, formatted_message)
+    await execute_opportunities_webhook(discord_webhook, formatted_message)
 
-#     opps.update_opportunities_status(data_results)
+    opps.update_opportunities_status(data_results)
 
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
