@@ -2,7 +2,8 @@ name: Daily Data Retrieval Automation
 
 on:
   schedule:
-    - cron: "0 0 */2 * *" # Runs every other day at 12AM
+    # TODO - Issue 9: Fix this time issue
+    - cron: "0 0 */2 * *" # Runs every other day at 12AM UTC (5PM PST the next day)
   workflow_dispatch: # Allow manual trigger
 
 jobs:

@@ -4,7 +4,7 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 
 ## Key features
 
-- **Stay informed**: Keeps up-to-date with the latest SWE job opportunities near Fullerton, CA without having to manually search for them. Sends in up to 10 job opportunities every other day.
+- **Stay informed**: Filtered by AI, acmOpportunities keeps up-to-date with the latest SWE job opportunities near Fullerton, CA without having to manually search for them. Sends in up to 20 job opportunities every other day.
 - **Seamless integration**: With the integration of PostgreSQL and Discord, acmOpportunities provides a seamless user experience. The bot retrieves job details from the database and delivers them as rich embeds on Discord, ensuring easy access and engagement.
 
 ## Usage

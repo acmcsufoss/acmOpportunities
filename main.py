@@ -7,7 +7,10 @@ import argparse
 from typing import List
 from bs4 import BeautifulSoup
 import re
-from datetime import date
+from datetime import date, datetime
+import utility as utils
+import opportunity as opps
+from opportunity import Opportunity
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -38,23 +41,14 @@ def extract_command_value() -> str:
     return days_needed_variable
 
 
-# ----------------- FOR POSTGRESS -----------------
-
-
-db_uri = os.getenv("DB_URI")
+# ----------------- FOR POSTGRES -----------------
 table_name = os.getenv("DB_TABLE")
-
-
-def instantiates_db_connection():
-    """Returns the connection from the DB"""
-
-    return psycopg2.connect(db_uri)
 
 
 def create():
     """Creates the DB. Only needs to be called once."""
 
-    with instantiates_db_connection() as connection:
+    with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -64,35 +58,10 @@ def create():
         connection.commit()
 
 
-def ingest_opportunities(job_data):
-    """Inserts opportunities if and only if they do not already exist"""
-
-    with instantiates_db_connection() as connection:
-        cursor = connection.cursor()
-
-        for job in job_data:
-            cursor.execute(
-                f"SELECT * FROM {table_name} WHERE _company = %(_company)s AND _title = %(_title)s AND _location = %(_location)s",
-                {
-                    "_company": job["_company"],
-                    "_title": job["_title"],
-                    "_location": job["_location"],
-                },
-            )
-            row = cursor.fetchone()
-
-            if row is None:
-                cursor.execute(
-                    f"INSERT INTO {table_name} (_company, _title, _location, _link, _processed) VALUES (%s, %s, %s, %s, %s)",
-                    (job["_company"], job["_title"], job["_location"], job["_link"], 0),
-                )
-        connection.commit()
-
-
 # ----------------- JOB DATA -----------------
 
 
-def request_rapidapi_indeed_data() -> List[object]:
+def request_rapidapi_indeed_data() -> List[Opportunity]:
     """
     This API call retrieves a formatted response object
     and returns a List[object] as the result
@@ -117,23 +86,25 @@ def request_rapidapi_indeed_data() -> List[object]:
         numeric = re.search(r"\d+", time)
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
-        if len(rapid_jobs) <= 10 and int(command_line_value) >= formatted_time_integer:
-            job = {}
-            job["_company"] = elem["company_name"]
-            job["_title"] = elem["title"]
-            job["_location"] = elem["location"]
-            job["_link"] = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
+        if len(rapid_jobs) < 10 and int(command_line_value) > formatted_time_integer:
+            _company = elem["company_name"]
+            _title = elem["title"]
+            _location = elem["location"]
+            _link = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
+            _processed = 0
+
+            opportunity = Opportunity(_company, _title, _location, _link, _processed)
 
             if (
-                "senior" not in job["_title"].lower()
-                and "sr" not in job["_title"].lower()
+                "senior" not in opportunity._title.lower()
+                and "sr" not in opportunity._title.lower()
             ):  # Filters out senior positions to ensure entry only level positions
-                rapid_jobs.append(job)
+                rapid_jobs.append(opportunity)
 
     return rapid_jobs
 
 
-def request_linkedin_data() -> List[object]:
+def request_linkedin_data() -> List[Opportunity]:
     """Returns a List[object] which contains web scraped job content"""
 
     url = os.getenv("LINKEDIN_URL")
@@ -147,92 +118,41 @@ def request_linkedin_data() -> List[object]:
     div_post = parse_content.find_all(
         "div",
         class_="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
-    )
-
-    date_div_post = parse_content.find_all(
-        "time",
-        class_="job-search-card__listdate",
-    )  # Recieves all the job posting dates
+    )  # TODO Narrow this down where it still recieves the same result
 
     command_line_value = extract_command_value()  # Extracts command-line value
 
     linked_in_jobs = []
 
-    for elem, date in zip(div_post, date_div_post):
-        """
-        If the value of date.text.strip()
-        has the word "days" in it, we access the number,
-        and compare it with the value of the command line
-        """
+    for elem in div_post:
+        all_dates = elem.find("time")
 
-        if "days" in date.text.strip():
-            numeric = re.search(r"\d+", date.text.strip())
-            formatted_time_integer = int(numeric.group()) if numeric else 0
+        datetime_val = all_dates.get("datetime")
+        date_object = datetime.strptime(datetime_val, "%Y-%m-%d")
+        day_differences = utils.calculate_day_difference(date_object)
+        # Calculates date difference from job postings to the relevant day
+
+        if len(linked_in_jobs) < 10 and int(command_line_value) > day_differences:
+            _company = elem.find("a", class_="hidden-nested-link").text.strip()
+            _title = elem.find("h3", class_="base-search-card__title").text.strip()
+            _location = elem.find(
+                "span", class_="job-search-card__location"
+            ).text.strip()
+            _link = elem.find("a", class_="base-card__full-link")["href"].split("?")[0]
+            _processed = 0
+
+            opportunity = Opportunity(_company, _title, _location, _link, _processed)
 
             if (
-                len(linked_in_jobs) <= 10
-                and int(command_line_value) >= formatted_time_integer
-            ):
-                job = {}
-                job["_company"] = elem.find(
-                    "h4", class_="base-search-card__subtitle"
-                ).text.strip()
-                job["_title"] = elem.find(
-                    "h3", class_="base-search-card__title"
-                ).text.strip()
-                job["_location"] = elem.find(
-                    "span", class_="job-search-card__location"
-                ).text.strip()
-                job["_link"] = elem.find("a", class_="base-card__full-link")[
-                    "href"
-                ].split("?")[0]
-
-                if (
-                    "senior" not in job["_title"].lower()
-                    and "sr" not in job["_title"].lower()
-                ):  # Filters out senior positions to ensure entry only level positions
-                    linked_in_jobs.append(job)
+                "senior" not in opportunity._title.lower()
+                and "sr" not in opportunity._title.lower()
+            ):  # Filters out senior positions to ensure entry only level positions
+                linked_in_jobs.append(opportunity)
 
     return linked_in_jobs
 
 
 # ----------------- HELPER FUNCTIONS -----------------
-
-
-def list_filtered_opportunities() -> List[object]:
-    """Returns a List[object] of job data that have a status of _processed = 0"""
-
-    with instantiates_db_connection() as connection:
-        cursor = connection.cursor()
-
-        cursor.execute(f"SELECT * FROM {table_name} WHERE _processed = 0 LIMIT 20")
-        rows = cursor.fetchall()
-
-        not_processed_rows = []
-
-        for row in rows:
-            job = {}
-
-            job["_company"] = row[0]
-            job["_title"] = row[1]
-            job["_location"] = row[2]
-            job["_link"] = row[3]
-            job["_processed"] = row[4]
-
-            # Uncomment to view up to 10 jobs that have not been posted
-
-            # _company, _title, _location, _link, _processed = row
-
-            # print("Company:", _company)
-            # print("Title:", _title)
-            # print("Location:", _location)
-            # print("Link:", _link)
-            # print("Processed:", _processed)
-            # print(" ")
-
-            not_processed_rows.append(job)
-
-    return not_processed_rows
 
 
 def format_opportunities(data_results) -> str:
@@ -241,34 +161,14 @@ def format_opportunities(data_results) -> str:
     formatted_string = ""
 
     for data_block in data_results:
-        _company = data_block["_company"]
-        _title = data_block["_title"]
-        _location = data_block["_location"]
-        _link = data_block["_link"]
+        _company = data_block._company
+        _title = data_block._title
+        _location = data_block._location
+        _link = data_block._link
 
         formatted_string += f"[**{_company}**]({_link}): {_title} `@{_location}`!\n"
 
     return formatted_string
-
-
-def update_opportunities_status(data_results):
-    """Updates the status of the jobs to _processed = 1 after it's been sent by the discord bot"""
-
-    with instantiates_db_connection() as connection:
-        cursor = connection.cursor()
-
-        for data_block in data_results:
-            cursor.execute(
-                f"UPDATE {table_name} SET _processed = %s WHERE _company = %s  AND _title = %s  AND _location = %s",
-                (
-                    1,
-                    data_block["_company"],
-                    data_block["_title"],
-                    data_block["_location"],
-                ),
-            )
-
-        connection.commit()
 
 
 # ----------------- RESET FUNCTION (DEBUGGING PURPOSES) -----------------
@@ -277,11 +177,11 @@ def update_opportunities_status(data_results):
 def reset_processed_status():
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
-    with instantiates_db_connection() as connection:
+    with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
-            f"SELECT _company, _title, _location FROM {table_name} WHERE _processed = 1"
+            f"SELECT _company, _title, _location FROM {table_name} WHERE _processed = 1 LIMIT 5"
         )
 
         rows = cursor.fetchall()
@@ -335,22 +235,23 @@ async def execute_opportunities_webhook(webhook_url, message):
 
 
 async def main():
-    rapid_data = request_rapidapi_indeed_data()
-    linkedin_data = request_linkedin_data()
+    rapid_data = opps.gpt_job_analyzer(request_rapidapi_indeed_data())
+    linkedin_data = opps.gpt_job_analyzer(request_linkedin_data())
 
-    ingest_opportunities(rapid_data)
-    ingest_opportunities(linkedin_data)
+    opps.ingest_opportunities(rapid_data)
+    opps.ingest_opportunities(linkedin_data)
 
     """
     To test the code without consuming API requests, call reset_processed_status().
-    This function efficiently resets the processed status of all job postings by setting them to _processed = 0.
+    This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
     By doing so, developers can run tests without wasting valuable API resources.
     To do so, please comment the function calls above this comment.
     After, please uncomment the following line of code:
     """
     # reset_processed_status()
 
-    data_results = list_filtered_opportunities()
+    data_results = opps.list_opportunities(True, filtered=True)
+
     if len(data_results) == 0:
         print("There are no job opportunities today.")
         exit()
@@ -361,7 +262,7 @@ async def main():
 
     await execute_opportunities_webhook(discord_webhook, formatted_message)
 
-    update_opportunities_status(data_results)
+    opps.update_opportunities_status(data_results)
 
 
 if __name__ == "__main__":
