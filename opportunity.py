@@ -137,7 +137,7 @@ def get_parsed_values(prompt) -> List[bool]:
         Provider.You,
         prompt=prompt,
     )
-
+    print(response)
     parsed_values = parse_gpt_values(response)
 
     return parsed_values
