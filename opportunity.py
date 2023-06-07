@@ -166,12 +166,9 @@ def gpt_job_analyzer(list_of_opps) -> List[Opportunity]:
         ):  # The type of error that would be recieved is type JSON
             sleep(0.5)
 
-    if (
-        len(parsed_values) == 0
-    ):  # If the parsed values ends up being 0 then exit() the entire function
-        print("Filtered jobs from GPT are 0. Exiting...")
-        exit()
+    print(f" Below are the parsed values from GPT\n {parsed_values}")
+    print(parsed_values)  # For debugging purposes
 
     return filter_out_opportunities(
         list_of_opps, parsed_values
-    )  # Returns filtered out opportunities if len(parsed_values) > 0
+    )  # Returns filtered out opportunities
