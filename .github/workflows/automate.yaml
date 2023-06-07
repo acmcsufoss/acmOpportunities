@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      -name: Virtual enviornment set up
+      - name: Virtual enviornment set up
         run: |
           python -m venv venv
           source venv/bin/activate
@@ -29,7 +29,7 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
-          
+
       - if: steps.cached-dependencies.outputs.cache-hit != 'true'
         name: install python packages
         run: |
