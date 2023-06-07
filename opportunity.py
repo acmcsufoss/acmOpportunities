@@ -8,8 +8,11 @@ import ast
 from time import sleep
 import json
 import utility as utils
+import openai
 
 load_dotenv()
+
+openai.api_key = os.getenv("GPT_API_KEY")
 
 table_name = os.getenv("DB_TABLE")
 
@@ -132,13 +135,18 @@ def filter_out_opportunities(list_of_opps, gpt_response) -> List[Opportunity]:
 
 
 def get_parsed_values(prompt) -> List[bool]:
-    """Helper function which returns the parsed values response from GPT"""
-    response = gpt4free.Completion.create(
-        Provider.You,
-        prompt=prompt,
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a job analyzer for college students.",
+            },
+            {"role": "user", "content": prompt},
+        ],
     )
-    print(response)
-    parsed_values = parse_gpt_values(response)
+    print(response.choices[0].message["content"])
+    parsed_values = parse_gpt_values(response.choices[0].message["content"])
 
     return parsed_values
 
