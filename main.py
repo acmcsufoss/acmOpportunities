@@ -3,10 +3,10 @@ import requests
 import os
 import json
 import asyncio
-import argparse
 from typing import List
 from bs4 import BeautifulSoup
 import re
+import gpt_utils as gpt
 from datetime import date, datetime
 import utility as utils
 import opportunity as opps
@@ -170,25 +170,6 @@ def request_linkedin_data() -> List[Opportunity]:
     return linked_in_jobs
 
 
-# ----------------- HELPER FUNCTIONS -----------------
-
-
-def format_opportunities(data_results) -> str:
-    """Recieves data from list_filtered_opporunities() and returns a single string message"""
-
-    formatted_string = ""
-
-    for data_block in data_results:
-        _company = data_block._company
-        _title = data_block._title
-        _location = data_block._location
-        _link = data_block._link
-
-        formatted_string += f"[**{_company}**]({_link}): {_title} `@{_location}`!\n"
-
-    return formatted_string
-
-
 # ----------------- RESET FUNCTION (DEBUGGING PURPOSES) -----------------
 
 
@@ -259,7 +240,7 @@ async def execute_opportunities_webhook(webhook_url, message, internship_message
 
 # async def main():
 # job_opps = utils.merge_all_opportunity_data(request_rapidapi_indeed_data(), request_linkedin_data())
-# filtered_job_opps = opps.gpt_job_analyzer(job_opps)
+# filtered_job_opps = gpt.gpt_job_analyzer(job_opps)
 # opps.ingest_opportunities(filtered_job_opps, "jobs_table")
 
 # internship_opps = utils.merge_all_opportunity_data(
@@ -267,7 +248,7 @@ async def execute_opportunities_webhook(webhook_url, message, internship_message
 #     request_apple_internship24_data(),
 #     request_linkedin_internship24_data(),
 # )
-# filtered_internship_opps = opps.gpt_job_analyzer(internship_opps)
+# filtered_internship_opps = gpt.gpt_job_analyzer(internship_opps)
 # opps.ingest_opportunities(filtered_internship_opps, "internship_table")
 
 # """
@@ -288,8 +269,8 @@ async def execute_opportunities_webhook(webhook_url, message, internship_message
 #     print("There are no job opportunities today.")
 #     exit()
 
-# intern_formatted_message = format_opportunities(intern_data_results)
-# job_formatted_message = format_opportunities(job_data_results)
+# intern_formatted_message = opps.format_opportunities(intern_data_results)
+# job_formatted_message = opps.format_opportunities(job_data_results)
 
 # discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
