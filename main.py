@@ -16,36 +16,10 @@ from dotenv import load_dotenv
 load_dotenv()  # To obtain keys from the .env file
 
 
-# ----------------- FOR CLI LIBRARY COMMAND -----------------
-
-
-def extract_command_value() -> str:
-    """Returns the value of type str prompted in the command line following --days-needed"""
-
-    parser = argparse.ArgumentParser(
-        description="Custom command for specifying days for fetching jobs."
-    )
-
-    # Add an argument (the custom command) along with the help functionality to see what the command does
-    parser.add_argument(
-        "--days-needed", type=str, help="The number of days needed to fetch jobs."
-    )
-
-    # Parse the argument and insert into a variable
-    arguments = parser.parse_args()
-
-    # Create a new variable to access the --days-needed command
-    days_needed_variable = arguments.days_needed
-
-    # Return the value from the --days-needed custom command
-    return days_needed_variable
-
-
 # ----------------- FOR POSTGRES -----------------
-table_name = os.getenv("DB_TABLE")
 
 
-def create():
+def create(table_name):
     """Creates the DB. Only needs to be called once."""
 
     with utils.instantiate_db_connection() as connection:
@@ -58,13 +32,89 @@ def create():
         connection.commit()
 
 
+# ----------------- INTERNSHIP DATA -----------------
+
+
+def request_github_internship24_data() -> List[Opportunity]:
+    """Scrapes Internship Data '24 from Github Repo"""
+
+    url = os.getenv("GITHUB_INTERN24_URL")
+
+    parse_content = utils.content_parser(url)
+
+    table_div = parse_content.find_all("tr")
+    github_list = []
+    for table in table_div:
+        cell = table.find_all("td")
+        if len(cell) == 3:
+            company = cell[0].find("a")
+            title = cell[2].text
+            location = cell[1].text
+
+            if (
+                company
+                and "href" in company.attrs
+                and company is not None
+                and len(github_list) < 5
+            ):
+                link = company["href"]  # If a link exists in the element
+                opportunity = Opportunity(company.text, title, location, link, 0)
+                github_list.append(opportunity)
+
+    return github_list
+
+
+def request_apple_internship24_data() -> List[Opportunity]:
+    """Scrapes Apple Summer '24 Internship Opportunities"""
+
+    url = os.getenv("APPLE_INTERN24_URL")
+
+    parse_content = utils.content_parser(url)
+
+    div_content = parse_content.find_all("tr")
+
+    apple_list = []
+
+    for content in div_content:
+        title = content.find("a", class_="table--advanced-search__title")
+        location = content.find("td", class_="table-col-2")
+
+        if title and location is not None and len(apple_list) <= 5:
+            link = "https://jobs.apple.com" + title["href"]
+            opportunity = Opportunity("Apple", title.text, location.text, link, 0)
+            apple_list.append(opportunity)
+
+    return apple_list
+
+
+def request_linkedin_internship24_data() -> List[Opportunity]:
+    """Web scrapes Summer '24 Internship Opportunities using LinkedIn"""
+
+    url = os.getenv("LINKEDIN_INTERN_URL")
+
+    parse_content = utils.content_parser(url)
+
+    linkedin_internship_opps = utils.blueprint_opportunity_formatter(
+        parse_content,
+        "base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
+        "hidden-nested-link",
+        "base-search-card__title",
+        "job-search-card__location",
+        "base-card__full-link",
+        True,
+        5,
+    )
+
+    return linkedin_internship_opps
+
+
 # ----------------- JOB DATA -----------------
 
 
 def request_rapidapi_indeed_data() -> List[Opportunity]:
     """
     This API call retrieves a formatted response object
-    and returns a List[object] as the result
+    and returns a List[Opportunity] as the result
     """
 
     url = os.getenv("RAPID_API_URL")
@@ -78,7 +128,7 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
     rapid_jobs = []
     response = requests.get(url, headers=headers).json()
 
-    command_line_value = extract_command_value()  # Extracts command-line value
+    command_line_value = utils.extract_command_value()  # Extracts command-line value
 
     for elem in response["hits"]:
         time = elem["formatted_relative_time"]
@@ -86,7 +136,7 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
         numeric = re.search(r"\d+", time)
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
-        if len(rapid_jobs) < 10 and int(command_line_value) > formatted_time_integer:
+        if len(rapid_jobs) < 10 and int(command_line_value) >= formatted_time_integer:
             _company = elem["company_name"]
             _title = elem["title"]
             _location = elem["location"]
@@ -95,59 +145,27 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
 
             opportunity = Opportunity(_company, _title, _location, _link, _processed)
 
-            if (
-                "senior" not in opportunity._title.lower()
-                and "sr" not in opportunity._title.lower()
-            ):  # Filters out senior positions to ensure entry only level positions
-                rapid_jobs.append(opportunity)
+            rapid_jobs.append(opportunity)
 
     return rapid_jobs
 
 
 def request_linkedin_data() -> List[Opportunity]:
-    """Returns a List[object] which contains web scraped job content"""
+    """Returns a List[Opportunity] which contains web scraped job content"""
 
     url = os.getenv("LINKEDIN_URL")
+    parse_content = utils.content_parser(url)
 
-    response = requests.get(url)
-
-    content = response.text
-
-    parse_content = BeautifulSoup(content, "html.parser")
-
-    div_post = parse_content.find_all(
-        "div",
-        class_="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
-    )  # TODO Narrow this down where it still recieves the same result
-
-    command_line_value = extract_command_value()  # Extracts command-line value
-
-    linked_in_jobs = []
-
-    for elem in div_post:
-        all_dates = elem.find("time")
-
-        datetime_val = all_dates.get("datetime")
-        date_object = datetime.strptime(datetime_val, "%Y-%m-%d")
-        day_differences = utils.calculate_day_difference(date_object)
-        # Calculates date difference from job postings to the relevant day
-
-        if len(linked_in_jobs) < 10 and int(command_line_value) > day_differences:
-            _company = elem.find("a", class_="hidden-nested-link").text.strip()
-            _title = elem.find("h3", class_="base-search-card__title").text.strip()
-            _location = elem.find(
-                "span", class_="job-search-card__location"
-            ).text.strip()
-            _link = elem.find("a", class_="base-card__full-link")["href"].split("?")[0]
-            _processed = 0
-
-            opportunity = Opportunity(_company, _title, _location, _link, _processed)
-
-            if (
-                "senior" not in opportunity._title.lower()
-                and "sr" not in opportunity._title.lower()
-            ):  # Filters out senior positions to ensure entry only level positions
-                linked_in_jobs.append(opportunity)
+    linked_in_jobs = utils.blueprint_opportunity_formatter(
+        parse_content,
+        "base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
+        "hidden-nested-link",
+        "base-search-card__title",
+        "job-search-card__location",
+        "base-card__full-link",
+        True,
+        10,
+    )
 
     return linked_in_jobs
 
@@ -174,7 +192,7 @@ def format_opportunities(data_results) -> str:
 # ----------------- RESET FUNCTION (DEBUGGING PURPOSES) -----------------
 
 
-def reset_processed_status():
+def reset_processed_status(table_name):
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
     with utils.instantiate_db_connection() as connection:
@@ -200,7 +218,7 @@ def reset_processed_status():
 # ----------------- DISCORD BOT -----------------
 
 
-async def execute_opportunities_webhook(webhook_url, message):
+async def execute_opportunities_webhook(webhook_url, message, internship_message):
     """
     Executes the message which recieves the formatted message
     from the format_opportunities() function as well as the webhook
@@ -209,14 +227,19 @@ async def execute_opportunities_webhook(webhook_url, message):
 
     # Create a dictionary payload for the message content
     payload = {
-        "content": "# ✨ NEW JOB POSTINGS BELOW! ✨",
+        "content": "# ✨ NEW OPPORTUNITY POSTINGS BELOW! ✨",
         "tts": False,
         "embeds": [
             {
                 "title": f"¸„.-•~¹°”ˆ˜¨   🎀 {date.today()} 🎀   ¨˜ˆ”°¹~•-.„¸",
                 "description": message,
                 "color": 0x05A3FF,
-            }
+            },
+            {
+                "title": f"¸„.-•~¹°”ˆ˜¨   🎀 {date.today()} 🎀   ¨˜ˆ”°¹~•-.„¸",
+                "description": internship_message,
+                "color": 0x05A3FF,
+            },
         ],
     }
 
@@ -235,34 +258,47 @@ async def execute_opportunities_webhook(webhook_url, message):
 
 
 # async def main():
-#     rapid_data = opps.gpt_job_analyzer(request_rapidapi_indeed_data())
-#     linkedin_data = opps.gpt_job_analyzer(request_linkedin_data())
+# job_opps = utils.merge_all_opportunity_data(request_rapidapi_indeed_data(), request_linkedin_data())
+# filtered_job_opps = opps.gpt_job_analyzer(job_opps)
+# opps.ingest_opportunities(filtered_job_opps, "jobs_table")
 
-#     opps.ingest_opportunities(rapid_data)
-#     opps.ingest_opportunities(linkedin_data)
+# internship_opps = utils.merge_all_opportunity_data(
+#     request_github_internship24_data(),
+#     request_apple_internship24_data(),
+#     request_linkedin_internship24_data(),
+# )
+# filtered_internship_opps = opps.gpt_job_analyzer(internship_opps)
+# opps.ingest_opportunities(filtered_internship_opps, "internship_table")
 
-#     """
-#     To test the code without consuming API requests, call reset_processed_status().
-#     This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
-#     By doing so, developers can run tests without wasting valuable API resources.
-#     To do so, please comment the function calls above this comment.
-#     After, please uncomment the following line of code:
-#     """
-#     # reset_processed_status()
+# """
+# To test the code without consuming API requests, call reset_processed_status().
+# This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
+# By doing so, developers can run tests without wasting valuable API resources.
+# To do so, please comment the function calls above this comment.
+# After, please uncomment the following line of code:
+# """
+# reset_processed_status()
 
-#     data_results = opps.list_opportunities(True, filtered=True)
+# intern_data_results = opps.list_opportunities(
+#     True, "internship_table", filtered=True
+# )
+# job_data_results = opps.list_opportunities(True, "jobs_table", filtered=True)
 
-#     if len(data_results) == 0:
-#         print("There are no job opportunities today.")
-#         exit()
+# if len(job_data_results) == 0 or len(intern_data_results) == 0:
+#     print("There are no job opportunities today.")
+#     exit()
 
-#     formatted_message = format_opportunities(data_results)
+# intern_formatted_message = format_opportunities(intern_data_results)
+# job_formatted_message = format_opportunities(job_data_results)
 
-#     discord_webhook = os.getenv("DISCORD_WEBHOOK")
+# discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-#     await execute_opportunities_webhook(discord_webhook, formatted_message)
+# await execute_opportunities_webhook(
+#     discord_webhook, job_formatted_message, intern_formatted_message
+# )
 
-#     opps.update_opportunities_status(data_results)
+# opps.update_opportunities_status(data_results, "jobs_table")
+# opps.update_opportunities_status(data_results, "internship_table")
 
 
 # if __name__ == "__main__":

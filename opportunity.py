@@ -8,10 +8,11 @@ import ast
 from time import sleep
 import json
 import utility as utils
+import openai
 
 load_dotenv()
 
-table_name = os.getenv("DB_TABLE")
+openai.api_key = os.getenv("GPT_API_KEY")
 
 MAX_RETRY = 15  # Max number of retrys for the gpt_job_analyzer() function
 
@@ -27,7 +28,7 @@ class Opportunity:
     _processed: bool
 
 
-def ingest_opportunities(job_data):
+def ingest_opportunities(job_data, table_name):
     """Inserts opportunities if and only if they do not already exist"""
     with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
@@ -57,7 +58,11 @@ def ingest_opportunities(job_data):
         connection.commit()
 
 
-def list_opportunities(debug: bool, filtered=False) -> List[Opportunity]:
+def list_opportunities(
+    debug: bool,
+    table_name,
+    filtered=False,
+) -> List[Opportunity]:
     """Lists all oppportunities in DB as well as returns them"""
 
     with utils.instantiate_db_connection() as connection:
@@ -95,7 +100,7 @@ def read_all_opportunities(rows, debug_tool) -> List[Opportunity]:
     return opportunities
 
 
-def update_opportunities_status(data_results):
+def update_opportunities_status(data_results, table_name):
     """Updates the status of the jobs to _processed = 1 after it's been sent by the discord bot"""
 
     with utils.instantiate_db_connection() as connection:
@@ -132,13 +137,18 @@ def filter_out_opportunities(list_of_opps, gpt_response) -> List[Opportunity]:
 
 
 def get_parsed_values(prompt) -> List[bool]:
-    """Helper function which returns the parsed values response from GPT"""
-    response = gpt4free.Completion.create(
-        Provider.You,
-        prompt=prompt,
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a job analyzer for college students.",
+            },
+            {"role": "user", "content": prompt},
+        ],
     )
-
-    parsed_values = parse_gpt_values(response)
+    print(response.choices[0].message["content"])
+    parsed_values = parse_gpt_values(response.choices[0].message["content"])
 
     return parsed_values
 
@@ -166,7 +176,8 @@ def gpt_job_analyzer(list_of_opps) -> List[Opportunity]:
         ):  # The type of error that would be recieved is type JSON
             sleep(0.5)
 
-    assert len(parsed_values) > 0  # Assert that the length of jobs should be above 0
+    print(f" Below are the parsed values from GPT\n {parsed_values}")
+    print(parsed_values)  # For debugging purposes
 
     return filter_out_opportunities(
         list_of_opps, parsed_values
