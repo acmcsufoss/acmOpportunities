@@ -1,6 +1,5 @@
 from typing import List
 import json
-import openai
 import os
 from time import sleep
 import pprint
@@ -8,13 +7,11 @@ import google.generativeai as palm
 
 MAX_RETRY = 5  # Max number of retrys for the gpt_job_analyzer() function
 
-openai.api_key = os.getenv("GPT_API_KEY")
-
 PALM_API_KEY = os.getenv("PALM_API_KEY")
 palm.configure(api_key=PALM_API_KEY)
 
 
-def find_model() -> any:
+def current_model_inuse() -> any:
     """Returns the model in use"""
 
     models = [
@@ -47,7 +44,7 @@ def filter_out_opportunities(list_of_opps, gpt_response):
 def get_parsed_values(prompt) -> List[bool]:
     """Function which returns parsed values if the opportunity mathces with the clubs values"""
 
-    model = find_model()
+    model = current_model_inuse()
 
     completion = palm.generate_text(
         model=model, prompt=prompt, temperature=0, max_output_tokens=500

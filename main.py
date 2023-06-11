@@ -273,23 +273,24 @@ async def execute_opportunities_webhook(webhook_url, message, internship_message
 #     """
 #     # reset_processed_status()
 
-#     intern_data_results = opps.list_opportunities(
-#         True, "internship_table", filtered=True
-#     )
-#     job_data_results = opps.list_opportunities(True, "jobs_table", filtered=True)
+# intern_data_results = opps.list_opportunities(
+#     True, "internship_table", filtered=True
+# )
+# job_data_results = opps.list_opportunities(True, "jobs_table", filtered=True)
 
-#     if len(job_data_results) == 0 or len(intern_data_results) == 0:
-#         print("There are no job opportunities today.")
-#         exit()
+# if len(job_data_results) == 0 or len(intern_data_results) == 0:
+#     print("There are no job opportunities today.")
+#     exit()
 
-#     intern_formatted_message = opps.format_opportunities(intern_data_results)
-#     job_formatted_message = opps.format_opportunities(job_data_results)
+# intern_formatted_message = opps.format_opportunities(intern_data_results)
+# job_formatted_message = opps.format_opportunities(job_data_results)
 
-#     discord_webhook = os.getenv("DISCORD_WEBHOOK")
+# discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-#     await execute_opportunities_webhook(
-#         discord_webhook, job_formatted_message, intern_formatted_message
-#     )
+# await execute_opportunities_webhook(
+#     discord_webhook, job_formatted_message, intern_formatted_message
+# )
+
 
 #     # opps.update_opportunities_status(data_results, "jobs_table")
 #     # opps.update_opportunities_status(data_results, "internship_table")
