@@ -7,7 +7,6 @@ import argparse
 from bs4 import BeautifulSoup
 from opportunity import Opportunity
 
-
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
 
