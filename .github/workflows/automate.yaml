@@ -2,8 +2,7 @@ name: Daily Data Retrieval Automation
 
 on:
   schedule:
-    # TODO - Issue 9: Fix this time issue
-    - cron: "0 0 */2 * *" # Runs every other day at 12AM UTC (5PM PST the next day)
+    - cron: "0 21 */2 * *" # Runs every other day at 9PM UTC (2PM PST the same day)
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -18,7 +17,21 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Python packages
+      - name: Virtual enviornment set up
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+
+      # If theres no changes in the requirements.txt file it will pull all the dependences from cache
+      - name: cache environment
+        id: cached-dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+
+      - if: steps.cached-dependencies.outputs.cache-hit != 'true'
+        name: install python packages
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -32,3 +45,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK}}
           DB_URI: ${{ secrets.DB_URI}}
           DB_TABLE: ${{ secrets.DB_TABLE}}
+          GPT_API_KEY: ${{ secrets.GPT_API_KEY}}
