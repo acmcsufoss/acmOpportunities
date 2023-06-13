@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from dotenv import load_dotenv
-from typing import List, Optional
+from typing import List
 import utility as utils
 
 load_dotenv()

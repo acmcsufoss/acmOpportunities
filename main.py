@@ -4,21 +4,17 @@ import os
 import json
 import asyncio
 from typing import List
-from bs4 import BeautifulSoup
 import re
-
-import gpt_utils
-from datetime import date, datetime
+from datetime import date
 import utility as utils
 import opportunity as opps
 from opportunity import Opportunity
-
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
 
 
-# ----------------- FOR POSTGRES -----------------
+# ----------------- POSTGRES -----------------
 
 
 def create(table_name):
@@ -50,47 +46,36 @@ def request_github_internship24_data() -> List[Opportunity]:
         cell = table.find_all("td")
         if len(cell) == 3:
             _company = cell[0].find("a")
-            _title = cell[2].text
+            _titles = cell[2].find_all(
+                "a"
+            )  # Create a List[str] which contain all the titles
             _location = cell[1].text
 
             if (
-                _company
-                and "href" in _company.attrs
-                and _company is not None
-                and len(github_list) < 5
+                (_company and "href" in _company.attrs)
+                or any(title and "href" in title.attrs for title in _titles)
+                # If the current row has any job titles that contain a link attribute
+                and "Closed" not in _titles
             ):
-                _link = _company["href"]  # If a link exists in the element
-                opportunity = Opportunity(
-                    _company.text.strip(), _title.strip(), _location.strip(), _link, 0
+                _company_link = (
+                    _company["href"] if _company and len(_titles) == 1 else ""
+                )  # If the length of the current title(s) is 1 then we grab the company link immediately
+                _company_name = (
+                    _company.text.strip() if _company else cell[0].text.strip()
                 )
-                github_list.append(opportunity)
+
+                # Loop through each given title where there could be a possible link to the job
+                for title in _titles:
+                    _title_text = title.text.strip()
+                    _title_link = (
+                        title["href"] if "href" in title.attrs else _company_link
+                    )  # If there exists a link in the title job section then we just add that as the link, else we add the company link from earlier
+                    opportunity = Opportunity(
+                        _company_name, _title_text, _location.strip(), _title_link, 0
+                    )
+                    github_list.append(opportunity)
 
     return github_list
-
-
-def request_apple_internship24_data() -> List[Opportunity]:
-    """Scrapes Apple Summer '24 Internship Opportunities"""
-
-    url = os.getenv("APPLE_INTERN24_URL")
-
-    parse_content = utils.content_parser(url)
-
-    div_content = parse_content.find_all("tr")
-
-    apple_list = []
-
-    for content in div_content:
-        _title = content.find("a", class_="table--advanced-search__title")
-        _location = content.find("td", class_="table-col-2")
-
-        if _title and _location is not None and len(apple_list) <= 5:
-            _link = "https://jobs.apple.com" + _title["href"]
-            opportunity = Opportunity(
-                "Apple", _title.text.strip(), _location.text.strip(), _link, 0
-            )
-            apple_list.append(opportunity)
-
-    return apple_list
 
 
 def request_linkedin_internship24_data() -> List[Opportunity]:
@@ -205,7 +190,7 @@ def reset_processed_status(table_name):
 # ----------------- DISCORD BOT -----------------
 
 
-async def execute_opportunities_webhook(webhook_url, message, internship_message):
+async def execute_opportunities_webhook(webhook_url, job_message, internship_message):
     """
     Executes the message which recieves the formatted message
     from the format_opportunities() function as well as the webhook
@@ -221,18 +206,26 @@ async def execute_opportunities_webhook(webhook_url, message, internship_message
                 "title": f"✧･ﾟ: *✧･ﾟ:* 🎀 {date.today()} 🎀 ✧･ﾟ: *✧･ﾟ:*｡",
                 "color": 0xFFFFFF,
             },
+        ],
+    }
+
+    if job_message:
+        payload["embeds"].append(
             {
                 "title": "¸„.-•~¹°”ˆ˜¨ JOB OPPORTUNITIES ¨˜ˆ”°¹~•-.„¸",
-                "description": message,
+                "description": job_message,
                 "color": 0x05A3FF,
             },
+        )
+
+    if internship_message:
+        payload["embeds"].append(
             {
                 "title": " ¸„.-•~¹°”ˆ˜¨ INTERNSHIP OPPORTUNITIES ¨˜ˆ”°¹~•-.„¸",
                 "description": internship_message,
                 "color": 0x05A3FF,
             },
-        ],
-    }
+        )
 
     # Convert the payload to JSON format
     json_payload = json.dumps(payload)
@@ -248,52 +241,56 @@ async def execute_opportunities_webhook(webhook_url, message, internship_message
         print(f"Failed to send webhook message. Status Code: {response.status_code}")
 
 
-# async def main():
-#     # job_opps = utils.merge_all_opportunity_data(
-#     #     request_rapidapi_indeed_data(), request_linkedin_data()
-#     # )
-#     # filtered_job_opps = gpt_utils.gpt_job_analyzer(job_opps)
-#     # opps.ingest_opportunities(filtered_job_opps, "jobs_table")
-#     # gpt_utils.gpt_job_analyzer(request_linkedin_data())
+async def main():
+    # job_opps = utils.merge_all_opportunity_data(
+    #     request_rapidapi_indeed_data(), request_linkedin_data()
+    # )
+    # filtered_job_opps = utils.gpt_job_analyze(
+    #     job_opps
+    # )
+    # opps.ingest_opportunities(filtered_job_opps, "jobs_table")
 
-#     internship_opps = utils.merge_all_opportunity_data(
-#         request_github_internship24_data(),
-#         request_apple_internship24_data(),
-#         request_linkedin_internship24_data(),
-#     )
-#     filtered_internship_opps = gpt_utils.gpt_job_analyzer(internship_opps)
-#     opps.ingest_opportunities(filtered_internship_opps, "internship_table")
+    # internship_opps = utils.merge_all_opportunity_data(
+    #     request_github_internship24_data(),
+    #     request_linkedin_internship24_data(),
+    # )
+    # filtered_internship_opps = utils.gpt_job_analyze(
+    #     internship_opps
+    # )
+    # opps.ingest_opportunities(filtered_internship_opps, "internship_table")
 
-#     """
-#     To test the code without consuming API requests, call reset_processed_status().
-#     This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
-#     By doing so, developers can run tests without wasting valuable API resources.
-#     To do so, please comment the function calls above this comment.
-#     After, please uncomment the following line of code:
-#     """
-#     # reset_processed_status()
+    """
+    To test the code without consuming API requests, call reset_processed_status().
+    This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
+    By doing so, developers can run tests without wasting valuable API resources.
+    To do so, please comment the function calls above this comment.
+    After, please uncomment the following line of code:
+    """
+    # reset_processed_status()
 
-# intern_data_results = opps.list_opportunities(
-#     True, "internship_table", filtered=True
-# )
-# job_data_results = opps.list_opportunities(True, "jobs_table", filtered=True)
+    # utils.gpt_job_analyzer(request_linkedin_data())
+    # internship_data_results = opps.list_opportunities(
+    #     True, "internship_table", filtered=True
+    # )
+    # job_data_results = opps.list_opportunities(True, "jobs_table", filtered=True)
 
-# if len(job_data_results) == 0 or len(intern_data_results) == 0:
-#     print("There are no job opportunities today.")
-#     exit()
+    # if (
+    #     len(job_data_results) == 0 or len(internship_data_results) == 0
+    # ):
+    #     print("There are no job opportunities today.")
+    #     exit()
 
-# intern_formatted_message = opps.format_opportunities(intern_data_results)
-# job_formatted_message = opps.format_opportunities(job_data_results)
+    # internship_formatted_message = opps.format_opportunities(internship_data_results)
+    # job_formatted_message = opps.format_opportunities(job_data_results)
 
-# discord_webhook = os.getenv("DISCORD_WEBHOOK")
+    # discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-# await execute_opportunities_webhook(
-#     discord_webhook, job_formatted_message, intern_formatted_message
-# )
+    # await execute_opportunities_webhook(
+    #     discord_webhook, job_formatted_message, internship_formatted_message
+    # )
 
-
-#     # opps.update_opportunities_status(data_results, "jobs_table")
-#     # opps.update_opportunities_status(data_results, "internship_table")
+    # opps.update_opportunities_status(job_data_results, "jobs_table")
+    # opps.update_opportunities_status(internship_data_results, "internship_table")
 
 
 # if __name__ == "__main__":
