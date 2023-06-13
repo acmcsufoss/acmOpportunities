@@ -246,19 +246,15 @@ async def main():
     # job_opps = utils.merge_all_opportunity_data(
     #     request_rapidapi_indeed_data(), request_linkedin_data()
     # )
-    # filtered_job_opps = utils.gpt_job_analyze(
-    #     job_opps
-    # )
+    # filtered_job_opps = utils.gpt_job_analyze(job_opps)
     # opps.ingest_opportunities(filtered_job_opps, "jobs_table")
 
-    # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
+    # # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     # internship_opps = utils.merge_all_opportunity_data(
     #     request_github_internship24_data(),
     #     request_linkedin_internship24_data(),
     # )
-    # filtered_internship_opps = utils.gpt_job_analyze(
-    #     internship_opps
-    # )
+    # filtered_internship_opps = utils.gpt_job_analyze(internship_opps)
     # opps.ingest_opportunities(filtered_internship_opps, "internship_table")
 
     """
@@ -270,15 +266,12 @@ async def main():
     """
     # reset_processed_status()
 
-    # utils.gpt_job_analyzer(request_linkedin_data())
     # internship_data_results = opps.list_opportunities(
     #     True, "internship_table", filtered=True
     # )
     # job_data_results = opps.list_opportunities(True, "jobs_table", filtered=True)
 
-    # if (
-    #     len(job_data_results) == 0 or len(internship_data_results) == 0
-    # ):
+    # if len(job_data_results) == 0 or len(internship_data_results) == 0:
     #     print("There are no job opportunities today.")
     #     exit()
 

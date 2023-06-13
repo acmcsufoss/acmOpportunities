@@ -124,7 +124,6 @@ def merge_all_opportunity_data(*args) -> List[Opportunity]:
 
 MAX_RETRY = 5  # Max number of retrys for the gpt_job_analyzer() function
 palm.configure(api_key=os.getenv("PALM_API_KEY"))
-print(os.getenv("PALM_API_KEY"))
 
 
 def current_model_inuse() -> any:
