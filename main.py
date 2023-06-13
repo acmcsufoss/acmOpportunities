@@ -242,6 +242,7 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
 
 
 async def main():
+    # Merges all job related opportunities to one large List[Opportunity]
     # job_opps = utils.merge_all_opportunity_data(
     #     request_rapidapi_indeed_data(), request_linkedin_data()
     # )
@@ -250,6 +251,7 @@ async def main():
     # )
     # opps.ingest_opportunities(filtered_job_opps, "jobs_table")
 
+    # Merges all internship related opportunities to one large List[Opportunity]
     # internship_opps = utils.merge_all_opportunity_data(
     #     request_github_internship24_data(),
     #     request_linkedin_internship24_data(),
