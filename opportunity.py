@@ -9,20 +9,24 @@ load_dotenv()
 
 
 class OpportunityType(Enum):
+    """Enum holding the type of unique opportunity"""
+
     FULL_TIME = "full_time"
     INTERNSHIP = "internship"
+    CONFERENCE = "conference"
+    SCHOLARHSHIP = "scholarship"
 
 
 @dataclass
 class Opportunity:
     """Struct to hold data for an opportunity"""
 
-    _company: str
-    _title: str
-    _location: str
-    _link: str
-    _processed: bool
-    _type: OpportunityType
+    company: str
+    title: str
+    location: str
+    link: str
+    processed: bool
+    type: OpportunityType
 
 
 table_name = os.getenv("DB_TABLE")
@@ -35,24 +39,26 @@ def ingest_opportunities(job_data):
 
         for job in job_data:
             cursor.execute(
-                f"SELECT * FROM {table_name} WHERE _company = %(_company)s AND _title = %(_title)s AND _location = %(_location)s",
+                f"SELECT * FROM {table_name} WHERE company = %(company)s AND title = %(title)s AND location = %(location)s AND type = %(type)s",
                 {
-                    "_company": job._company,
-                    "_title": job._title,
-                    "_location": job._location,
+                    "company": job.company,
+                    "title": job.title,
+                    "location": job.location,
+                    "type": job.type,
                 },
             )
             row = cursor.fetchone()
 
             if row is None:
                 cursor.execute(
-                    f"INSERT INTO {table_name} (_company, _title, _location, _link, _processed) VALUES (%s, %s, %s, %s, %s)",
+                    f"INSERT INTO {table_name} (company, title, location, link, processed, type) VALUES (%s, %s, %s, %s, %s, %s)",
                     (
-                        job._company,
-                        job._title,
-                        job._location,
-                        job._link,
-                        job._processed,
+                        job.company,
+                        job.title,
+                        job.location,
+                        job.link,
+                        job.processed,
+                        job.type,
                     ),
                 )
         connection.commit()
@@ -60,7 +66,7 @@ def ingest_opportunities(job_data):
 
 def list_opportunities(
     debug: bool,
-    table_name,
+    opp_type: str,
     filtered=False,
 ) -> List[Opportunity]:
     """Lists all oppportunities in DB as well as returns them"""
@@ -69,7 +75,9 @@ def list_opportunities(
         cursor = connection.cursor()
 
         if filtered:
-            cursor.execute(f"SELECT * FROM {table_name} WHERE _processed = 0 LIMIT 15")
+            cursor.execute(
+                f"SELECT * FROM {table_name} WHERE processed = 0 AND type = '{opp_type}' LIMIT 15"
+            )
         else:
             cursor.execute(f"SELECT * FROM {table_name}")
 
@@ -83,37 +91,38 @@ def read_all_opportunities(rows, debug_tool) -> List[Opportunity]:
     opportunities = []
 
     for row in rows:
-        _company, _title, _location, _link, _processed = row
+        company, title, location, link, processed, type = row
 
         if debug_tool:
-            print("Company:", _company)
-            print("Title:", _title)
-            print("Location:", _location)
-            print("Link:", _link)
-            print("Processed:", _processed)
+            print("Company:", company)
+            print("Title:", title)
+            print("Location:", location)
+            print("Link:", link)
+            print("Processed:", processed)
+            print("Type: ", type)
             print(" ")
 
-        opportunity = Opportunity(_company, _title, _location, _link, _processed)
+        opportunity = Opportunity(company, title, location, link, processed, type)
 
         opportunities.append(opportunity)
 
     return opportunities
 
 
-def update_opportunities_status(data_results, table_name):
-    """Updates the status of the jobs to _processed = 1 after it's been sent by the discord bot"""
+def update_opportunities_status(data_results):
+    """Updates the status of the jobs to processed = 1 after it's been sent by the discord bot"""
 
     with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         for data_block in data_results:
             cursor.execute(
-                f"UPDATE {table_name} SET _processed = %s WHERE _company = %s  AND _title = %s  AND _location = %s",
+                f"UPDATE {table_name} SET processed = %s WHERE company = %s AND title = %s AND location = %s",
                 (
                     1,
-                    data_block._company,
-                    data_block._title,
-                    data_block._location,
+                    data_block.company,
+                    data_block.title,
+                    data_block.location,
                 ),
             )
 
@@ -126,11 +135,11 @@ def format_opportunities(data_results) -> str:
     formatted_string = ""
 
     for data_block in data_results:
-        _company = data_block._company
-        _title = data_block._title
-        _location = data_block._location
-        _link = data_block._link
+        company = data_block.company
+        title = data_block.title
+        location = data_block.location
+        link = data_block.link
 
-        formatted_string += f"[**{_company}**]({_link}): {_title} `@{_location}`!\n"
+        formatted_string += f"[**{company}**]({link}): {title} `@{location}`!\n"
 
     return formatted_string

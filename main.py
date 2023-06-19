@@ -1,4 +1,3 @@
-import psycopg2
 import requests
 import os
 import json
@@ -8,7 +7,7 @@ import re
 from datetime import date
 import utility as utils
 import opportunity as opps
-from opportunity import Opportunity
+from opportunity import Opportunity, OpportunityType
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -24,7 +23,7 @@ def create(table_name):
         cursor = connection.cursor()
 
         cursor.execute(
-            f"""CREATE TABLE IF NOT EXISTS {table_name}(_company TEXT, _title TEXT, _location TEXT, _link TEXT, _processed INTEGER DEFAULT 0)"""
+            f"""CREATE TABLE IF NOT EXISTS {table_name}(company TEXT, title TEXT, location TEXT, link TEXT, processed INTEGER DEFAULT 0)"""
         )
 
         connection.commit()
@@ -37,43 +36,64 @@ def request_github_internship24_data() -> List[Opportunity]:
     """Scrapes Internship Data '24 from Github Repo"""
 
     url = os.getenv("GITHUB_INTERN24_URL")
-
     parse_content = utils.content_parser(url)
-
-    table_div = parse_content.find_all("tr")
     github_list = []
-    for table in table_div:
-        cell = table.find_all("td")
-        if len(cell) == 3:
-            _company = cell[0].find("a")
-            _titles = cell[2].find_all(
-                "a"
-            )  # Create a List[str] which contain all the titles
-            _location = cell[1].text
+    td_elems = parse_content.find_all("td")
 
-            if (
-                (_company and "href" in _company.attrs)
-                or any(title and "href" in title.attrs for title in _titles)
-                # If the current row has any job titles that contain a link attribute
-                and "Closed" not in _titles
-            ):
-                _company_link = (
-                    _company["href"] if _company and len(_titles) == 1 else ""
-                )  # If the length of the current title(s) is 1 then we grab the company link immediately
-                _company_name = (
-                    _company.text.strip() if _company else cell[0].text.strip()
+    # A temporary list holding the current rows internship data
+    temp = []
+
+    for cell in td_elems:
+        temp.append(cell)
+
+        if (
+            len(temp) == 3
+        ):  # A length of three indicates a complete row has been searched
+            company = temp[0]
+            location = temp[1].text
+            title = temp[2]
+            t = temp[2].find_all("a")
+
+            if len(title) == 1:
+                """
+                If the title length consists of one element,
+                this indicates that the link exists within
+                the company title and the company title only.
+                """
+                opportunity = Opportunity(
+                    company.text,
+                    title.text,
+                    location,
+                    company.find("a")["href"],
+                    0,
+                    OpportunityType.INTERNSHIP.value,
                 )
+                github_list.append(opportunity)
 
-                # Loop through each given title where there could be a possible link to the job
-                for title in _titles:
-                    _title_text = title.text.strip()
-                    _title_link = (
-                        title["href"] if "href" in title.attrs else _company_link
-                    )  # If there exists a link in the title job section then we just add that as the link, else we add the company link from earlier
-                    opportunity = Opportunity(
-                        _company_name, _title_text, _location.strip(), _title_link, 0
-                    )
-                    github_list.append(opportunity)
+            for i in t:
+                """
+                In cases where the title consists of multiple elements,
+                it is possible that the link may or may not be present within
+                the current title element. There are instances where the title
+                text matches the location text, as each location may have its
+                own link. If not taken care of, the title text will result in
+                the location. To prevent any potential mishaps arising from this,
+                the following line of code addresses and resolves the issue.
+                """
+                fixed_title = title.text if i.text in location else i.text
+
+                opportunity = Opportunity(
+                    company.text,
+                    fixed_title,
+                    location,
+                    i["href"],
+                    0,
+                    OpportunityType.INTERNSHIP.value,
+                )
+                github_list.append(opportunity)
+
+            # Resetting temps value in order to hold the next row of data
+            temp = []
 
     return github_list
 
@@ -94,6 +114,7 @@ def request_linkedin_internship24_data() -> List[Opportunity]:
         "base-card__full-link",
         True,
         5,
+        OpportunityType.INTERNSHIP.value,
     )
 
     return linkedin_internship_opps
@@ -128,13 +149,20 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
         if len(rapid_jobs) < 10 and int(command_line_value) >= formatted_time_integer:
-            _company = elem["company_name"]
-            _title = elem["title"]
-            _location = elem["location"]
-            _link = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
-            _processed = 0
+            company = elem["company_name"]
+            title = elem["title"]
+            location = elem["location"]
+            link = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
+            processed = 0
 
-            opportunity = Opportunity(_company, _title, _location, _link, _processed)
+            opportunity = Opportunity(
+                company,
+                title,
+                location,
+                link,
+                processed,
+                OpportunityType.FULL_TIME.value,
+            )
 
             rapid_jobs.append(opportunity)
 
@@ -156,6 +184,7 @@ def request_linkedin_data() -> List[Opportunity]:
         "base-card__full-link",
         True,
         10,
+        OpportunityType.FULL_TIME.value,
     )
 
     return linked_in_jobs
@@ -171,17 +200,17 @@ def reset_processed_status(table_name):
         cursor = connection.cursor()
 
         cursor.execute(
-            f"SELECT _company, _title, _location FROM {table_name} WHERE _processed = 1 LIMIT 5"
+            f"SELECT company, title, location FROM {table_name} WHERE processed = 1 LIMIT 5"
         )
 
         rows = cursor.fetchall()
 
         for row in rows:
-            _company, _title, _location = row[:3]
+            company, title, location = row[:3]
 
             cursor.execute(
-                f"UPDATE {table_name} SET _processed = 0 WHERE _company = %s AND _title = %s AND _location = %s",
-                (_company, _title, _location),
+                f"UPDATE {table_name} SET processed = 0 WHERE company = %s AND title = %s AND location = %s",
+                (company, title, location),
             )
 
         connection.commit()
@@ -247,15 +276,15 @@ async def main():
     #     request_rapidapi_indeed_data(), request_linkedin_data()
     # )
     # filtered_job_opps = utils.gpt_job_analyze(job_opps)
-    # opps.ingest_opportunities(filtered_job_opps, "jobs_table")
+    # opps.ingest_opportunities(filtered_job_opps)
 
     # # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     # internship_opps = utils.merge_all_opportunity_data(
-    #     request_github_internship24_data(),
     #     request_linkedin_internship24_data(),
+    #     request_github_internship24_data(),
     # )
     # filtered_internship_opps = utils.gpt_job_analyze(internship_opps)
-    # opps.ingest_opportunities(filtered_internship_opps, "internship_table")
+    # opps.ingest_opportunities(filtered_internship_opps)
 
     """
     To test the code without consuming API requests, call reset_processed_status().
@@ -266,12 +295,10 @@ async def main():
     """
     # reset_processed_status()
 
-    # internship_data_results = opps.list_opportunities(
-    #     True, "internship_table", filtered=True
-    # )
-    # job_data_results = opps.list_opportunities(True, "jobs_table", filtered=True)
+    # internship_data_results = opps.list_opportunities(True, "internship", filtered=True)
+    # job_data_results = opps.list_opportunities(True, "full_time", filtered=True)
 
-    # if len(job_data_results) == 0 or len(internship_data_results) == 0:
+    # if len(job_data_results) == 0:
     #     print("There are no job opportunities today.")
     #     exit()
 
@@ -284,9 +311,9 @@ async def main():
     #     discord_webhook, job_formatted_message, internship_formatted_message
     # )
 
-    # opps.update_opportunities_status(job_data_results, "jobs_table")
-    # opps.update_opportunities_status(internship_data_results, "internship_table")
+    # opps.update_opportunities_status(job_data_results)
+    # opps.update_opportunities_status(internship_data_results)
 
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

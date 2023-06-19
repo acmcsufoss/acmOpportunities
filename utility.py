@@ -70,6 +70,7 @@ def blueprint_opportunity_formatter(
     link_elem,  # Class to recieve the link
     date_limit: bool,  # If true will compare the command line value to date difference, else will not be accounted for in the final list
     len_of_jobs: int,  # Determines how many jobs will be stored in the final List[Opportunity]
+    opp_type: str,
 ) -> List[Opportunity]:
     """Helper function which serves as a data extraction blueprint for specific formatting"""
 
@@ -77,21 +78,21 @@ def blueprint_opportunity_formatter(
     command_line_value = extract_command_value()
     internship_list = []
     for elem in div:
-        _company = elem.find(class_=company_elem).text.strip()
-        _title = elem.find(class_=title_elem).text.strip()
-        _location = elem.find(class_=location_elem).text.strip()
-        _link = elem.find(class_=link_elem)["href"].split("?")[0]
-        _processed = 0
+        company = elem.find(class_=company_elem).text.strip()
+        title = elem.find(class_=title_elem).text.strip()
+        location = elem.find(class_=location_elem).text.strip()
+        link = elem.find(class_=link_elem)["href"].split("?")[0]
+        processed = 0
 
         date_difference = calculate_day_difference(elem)
         if len(internship_list) < len_of_jobs:
             if date_limit and int(command_line_value) >= date_difference:
                 opportunity = Opportunity(
-                    _company, _title, _location, _link, _processed
+                    company, title, location, link, processed, opp_type
                 )
             else:
                 opportunity = Opportunity(
-                    _company, _title, _location, _link, _processed
+                    company, title, location, link, processed, opp_type
                 )
 
             internship_list.append(opportunity)
@@ -115,8 +116,28 @@ def merge_all_opportunity_data(*args) -> List[Opportunity]:
     for arg in args:
         merged_opp_list += arg
 
-    print(merged_opp_list)
     return merged_opp_list
+
+
+def add_column(column_name, default) -> None:
+    """Adds a column for adjustment to the table after the table has been created"""
+    with instantiate_db_connection() as connection:
+        cursor = connection.cursor()
+
+        cursor.execute(
+            f"ALTER TABLE jobs_table ADD COLUMN {column_name} VARCHAR(255) DEFAULT '{default}'"
+        )
+
+        connection.commit()
+
+
+def delete_alL_opportunity_type(opp_type: str) -> None:
+    """Deletes all opportunities of a specific type for testing purposes only"""
+    with instantiate_db_connection() as connection:
+        cursor = connection.cursor()
+
+        cursor.execute("DELETE FROM jobs_table WHERE type = %s", (opp_type,))
+        connection.commit()
 
 
 # ----------------- PALM API -----------------
@@ -163,7 +184,7 @@ def get_parsed_values(prompt) -> List[bool]:
     completion = palm.generate_text(
         model=model, prompt=prompt, temperature=0, max_output_tokens=500
     )
-
+    print(completion.result)
     parsed_values = parse_gpt_values(completion.result)
     return parsed_values
 
@@ -174,21 +195,24 @@ def gpt_job_analyze(list_of_opps) -> List[Opportunity]:
     print(f"The jobs original length before filtering: {len(list_of_opps)}")
 
     prompt = """
-        Your role is to assess job opportunities
-        for college students in the tech industry,
-        particularly those pursuing Computer Science
-        majors and seeking entry-level positions.
-        To aid in this decision-making process, please
-        respond a minified single JSON list of booleans (True/False)
-        for each job that aligns with our goal of offering
-        entry-level tech-related positions to college
-        students.
+        Your role is to assess job opportunities 
+        for college students in the tech industry, 
+        particularly those pursuing Computer Science 
+        majors and seeking entry-level positions. 
+        To aid in this decision-making process, 
+        please respond with a minified single JSON 
+        list of booleans (True/False) only, 
+        indicating whether each job aligns with our 
+        goal of offering entry-level tech-related 
+        positions to college students. 
+        The list should contain only the booleans 
+        (True/False) without any additional comments.
         """
 
     for opp in list_of_opps:
-        prompt += f"\nCompany: {opp._company}"
-        prompt += f"\nTitle: {opp._title}"
-        prompt += f"\nLocation: {opp._location}"
+        prompt += f"\nCompany: {opp.company}"
+        prompt += f"\nTitle: {opp.title}"
+        prompt += f"\nLocation: {opp.location}"
         prompt += "\n"
 
     parsed_values = []
