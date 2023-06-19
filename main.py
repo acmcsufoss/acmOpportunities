@@ -269,6 +269,7 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
         print(f"Failed to send webhook message. Status Code: {response.status_code}")
 
 
+
 async def main():
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     job_opps = utils.merge_all_opportunity_data(
