@@ -3,8 +3,6 @@ name: Daily Data Retrieval Automation
 on:
   schedule:
     - cron: "0 21 */2 * *" # Runs every other day at 9PM UTC (2PM PST the same day)
-  branches:
-    - main
   workflow_dispatch: # Allow manual trigger
 
 jobs:
