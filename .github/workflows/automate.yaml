@@ -3,6 +3,8 @@ name: Daily Data Retrieval Automation
 on:
   schedule:
     - cron: "0 21 */2 * *" # Runs every other day at 9PM UTC (2PM PST the same day)
+  branches:
+    - main
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -10,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -45,4 +47,6 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK}}
           DB_URI: ${{ secrets.DB_URI}}
           DB_TABLE: ${{ secrets.DB_TABLE}}
-          GPT_API_KEY: ${{ secrets.GPT_API_KEY}}
+          PALM_API_KEY: ${{ secrets.PALM_API_KEY}}
+          LINKEDIN_INTERN_URL: ${{ secrets.LINKEDIN_INTERN_URL}}
+          GH_INTERN24_URL: ${{ secrets.GH_INTERN24_URL}}

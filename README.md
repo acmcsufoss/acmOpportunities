@@ -12,6 +12,14 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 1. Install Python.
 2. Pip install the dependencies of main.py using `pip install -r requirements.txt`
 3. Set the required environment variables.
+4. To run the program, write `python ./main.py --days-needed 2`
+
+> **PLEASE NOTE THE FOLLOWING**
+> Please adjust the amount of days needed
+> when using the `--days-needed` command.
+> **Additionally**, please update the workflow in
+> `./github/workflows` to correspond to the
+> wanted amount of days.
 
 ## Example response
 
