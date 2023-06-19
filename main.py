@@ -71,15 +71,14 @@ def request_github_internship24_data() -> List[Opportunity]:
                 github_list.append(opportunity)
 
             for i in t:
-                """
-                In cases where the title consists of multiple elements,
-                it is possible that the link may or may not be present within
-                the current title element. There are instances where the title
-                text matches the location text, as each location may have its
-                own link. If not taken care of, the title text will result in
-                the location. To prevent any potential mishaps arising from this,
-                the following line of code addresses and resolves the issue.
-                """
+                # In cases where the title consists of multiple elements,
+                # it is possible that the link may or may not be present within
+                # the current title element. There are instances where the title
+                # text matches the location text, as each location may have its
+                # own link. If not taken care of, the title text will result in
+                # the location. To prevent any potential mishaps arising from this,
+                # the following line of code addresses and resolves the issue.
+
                 fixed_title = title.text if i.text in location else i.text
 
                 opportunity = Opportunity(
@@ -272,47 +271,46 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
 
 async def main():
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
-    # job_opps = utils.merge_all_opportunity_data(
-    #     request_rapidapi_indeed_data(), request_linkedin_data()
-    # )
-    # filtered_job_opps = utils.gpt_job_analyze(job_opps)
-    # opps.ingest_opportunities(filtered_job_opps)
+    job_opps = utils.merge_all_opportunity_data(
+        request_rapidapi_indeed_data(), request_linkedin_data()
+    )
+    filtered_job_opps = utils.gpt_job_analyze(job_opps)
+    opps.ingest_opportunities(filtered_job_opps)
 
     # # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
-    # internship_opps = utils.merge_all_opportunity_data(
-    #     request_linkedin_internship24_data(),
-    #     request_github_internship24_data(),
-    # )
-    # filtered_internship_opps = utils.gpt_job_analyze(internship_opps)
-    # opps.ingest_opportunities(filtered_internship_opps)
+    internship_opps = utils.merge_all_opportunity_data(
+        request_linkedin_internship24_data(),
+        request_github_internship24_data(),
+    )
+    filtered_internship_opps = utils.gpt_job_analyze(internship_opps)
+    opps.ingest_opportunities(filtered_internship_opps)
 
-    """
-    To test the code without consuming API requests, call reset_processed_status().
-    This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
-    By doing so, developers can run tests without wasting valuable API resources.
-    To do so, please comment the function calls above this comment.
-    After, please uncomment the following line of code:
-    """
+    # To test the code without consuming API requests, call reset_processed_status().
+    # This function efficiently resets the processed status of 5 job postings by setting them to _processed = 0.
+    # By doing so, developers can run tests without wasting valuable API resources.
+    # To do so, please comment the function calls above this comment.
+    # After, please uncomment the following line of code:
+
     # reset_processed_status()
 
-    # internship_data_results = opps.list_opportunities(True, "internship", filtered=True)
-    # job_data_results = opps.list_opportunities(True, "full_time", filtered=True)
+    internship_data_results = opps.list_opportunities(True, "internship", filtered=True)
+    job_data_results = opps.list_opportunities(True, "full_time", filtered=True)
 
-    # if len(job_data_results) == 0:
-    #     print("There are no job opportunities today.")
-    #     exit()
+    if len(job_data_results) == 0 and len(internship_data_results) == 0:
+        print("There are no job opportunities today.")
+        exit()
 
-    # internship_formatted_message = opps.format_opportunities(internship_data_results)
-    # job_formatted_message = opps.format_opportunities(job_data_results)
+    internship_formatted_message = opps.format_opportunities(internship_data_results)
+    job_formatted_message = opps.format_opportunities(job_data_results)
 
-    # discord_webhook = os.getenv("DISCORD_WEBHOOK")
+    discord_webhook = os.getenv("DISCORD_WEBHOOK")
 
-    # await execute_opportunities_webhook(
-    #     discord_webhook, job_formatted_message, internship_formatted_message
-    # )
+    await execute_opportunities_webhook(
+        discord_webhook, job_formatted_message, internship_formatted_message
+    )
 
-    # opps.update_opportunities_status(job_data_results)
-    # opps.update_opportunities_status(internship_data_results)
+    opps.update_opportunities_status(job_data_results)
+    opps.update_opportunities_status(internship_data_results)
 
 
 if __name__ == "__main__":
