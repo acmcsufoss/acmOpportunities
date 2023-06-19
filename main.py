@@ -8,6 +8,7 @@ from datetime import date
 import utility as utils
 import opportunity as opps
 from opportunity import Opportunity, OpportunityType
+from prompts import PROMPTS
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -45,54 +46,53 @@ def request_github_internship24_data() -> List[Opportunity]:
 
     for cell in td_elems:
         temp.append(cell)
+        if len(github_list) < 15:
+            if (
+                len(temp) == 3
+            ):  # A length of three indicates a complete row has been searched
+                company = temp[0]
+                location = temp[1].text
+                title = temp[2]
+                t = temp[2].find_all("a")
 
-        if (
-            len(temp) == 3
-        ):  # A length of three indicates a complete row has been searched
-            company = temp[0]
-            location = temp[1].text
-            title = temp[2]
-            t = temp[2].find_all("a")
+                if len(title) == 1:
+                    # If the title length consists of one element,
+                    # this indicates that the link exists within
+                    # the company title and the company title only.
 
-            if len(title) == 1:
-                """
-                If the title length consists of one element,
-                this indicates that the link exists within
-                the company title and the company title only.
-                """
-                opportunity = Opportunity(
-                    company.text,
-                    title.text,
-                    location,
-                    company.find("a")["href"],
-                    0,
-                    OpportunityType.INTERNSHIP.value,
-                )
-                github_list.append(opportunity)
+                    opportunity = Opportunity(
+                        company.text,
+                        title.text,
+                        location,
+                        company.find("a")["href"],
+                        0,
+                        OpportunityType.INTERNSHIP.value,
+                    )
+                    github_list.append(opportunity)
 
-            for i in t:
-                # In cases where the title consists of multiple elements,
-                # it is possible that the link may or may not be present within
-                # the current title element. There are instances where the title
-                # text matches the location text, as each location may have its
-                # own link. If not taken care of, the title text will result in
-                # the location. To prevent any potential mishaps arising from this,
-                # the following line of code addresses and resolves the issue.
+                for i in t:
+                    # In cases where the title consists of multiple elements,
+                    # it is possible that the link may or may not be present within
+                    # the current title element. There are instances where the title
+                    # text matches the location text, as each location may have its
+                    # own link. If not taken care of, the title text will result in
+                    # the location. To prevent any potential mishaps arising from this,
+                    # the following line of code addresses and resolves the issue.
 
-                fixed_title = title.text if i.text in location else i.text
+                    fixed_title = title.text if i.text in location else i.text
 
-                opportunity = Opportunity(
-                    company.text,
-                    fixed_title,
-                    location,
-                    i["href"],
-                    0,
-                    OpportunityType.INTERNSHIP.value,
-                )
-                github_list.append(opportunity)
+                    opportunity = Opportunity(
+                        company.text,
+                        fixed_title,
+                        location,
+                        i["href"],
+                        0,
+                        OpportunityType.INTERNSHIP.value,
+                    )
+                    github_list.append(opportunity)
 
-            # Resetting temps value in order to hold the next row of data
-            temp = []
+                # Resetting temps value in order to hold the next row of data
+                temp = []
 
     return github_list
 
@@ -220,7 +220,7 @@ def reset_processed_status(table_name):
 
 async def execute_opportunities_webhook(webhook_url, job_message, internship_message):
     """
-    Executes the message which recieves the formatted message
+    Executes the message which receives the formatted message
     from the format_opportunities() function as well as the webhook
     url for the respected discord channel
     """
@@ -269,21 +269,26 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
         print(f"Failed to send webhook message. Status Code: {response.status_code}")
 
 
-
 async def main():
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     job_opps = utils.merge_all_opportunity_data(
         request_rapidapi_indeed_data(), request_linkedin_data()
     )
-    filtered_job_opps = utils.gpt_job_analyze(job_opps)
+    filtered_job_opps = utils.gpt_job_analyze(
+        job_opps,
+        PROMPTS[OpportunityType.FULL_TIME],
+    )
     opps.ingest_opportunities(filtered_job_opps)
 
-    # # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
+    # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     internship_opps = utils.merge_all_opportunity_data(
         request_linkedin_internship24_data(),
         request_github_internship24_data(),
     )
-    filtered_internship_opps = utils.gpt_job_analyze(internship_opps)
+    filtered_internship_opps = utils.gpt_job_analyze(
+        internship_opps,
+        PROMPTS[OpportunityType.INTERNSHIP],
+    )
     opps.ingest_opportunities(filtered_internship_opps)
 
     # To test the code without consuming API requests, call reset_processed_status().
@@ -296,10 +301,6 @@ async def main():
 
     internship_data_results = opps.list_opportunities(True, "internship", filtered=True)
     job_data_results = opps.list_opportunities(True, "full_time", filtered=True)
-
-    if len(job_data_results) == 0 and len(internship_data_results) == 0:
-        print("There are no job opportunities today.")
-        exit()
 
     internship_formatted_message = opps.format_opportunities(internship_data_results)
     job_formatted_message = opps.format_opportunities(job_data_results)

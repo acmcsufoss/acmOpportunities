@@ -64,10 +64,10 @@ def calculate_day_difference(elem: datetime) -> int:
 def blueprint_opportunity_formatter(
     content,  # Parsed content
     div_elem,  # Class to traverse job elements
-    company_elem,  # Class to recieve the company text
-    title_elem,  # Class to recieve the title text
-    location_elem,  # Class to recieve the location text
-    link_elem,  # Class to recieve the link
+    company_elem,  # Class to receive the company text
+    title_elem,  # Class to receive the title text
+    location_elem,  # Class to receive the location text
+    link_elem,  # Class to receive the link
     date_limit: bool,  # If true will compare the command line value to date difference, else will not be accounted for in the final list
     len_of_jobs: int,  # Determines how many jobs will be stored in the final List[Opportunity]
     opp_type: str,
@@ -179,35 +179,34 @@ def filter_out_opportunities(list_of_opps, gpt_response) -> List[Opportunity]:
 def get_parsed_values(prompt) -> List[bool]:
     """Function which returns parsed values if the opportunity mathces with the clubs values"""
 
-    model = current_model_inuse()
+    defaults = {
+        "model": "models/text-bison-001",
+        "temperature": 0.0,
+        "candidate_count": 1,
+        "top_k": 100,
+        "top_p": 0.95,
+        "max_output_tokens": 3072,
+        "stop_sequences": [],
+        "safety_settings": [
+            {"category": "HARM_CATEGORY_DEROGATORY", "threshold": 3},
+            {"category": "HARM_CATEGORY_TOXICITY", "threshold": 3},
+            {"category": "HARM_CATEGORY_VIOLENCE", "threshold": 3},
+            {"category": "HARM_CATEGORY_SEXUAL", "threshold": 3},
+            {"category": "HARM_CATEGORY_MEDICAL", "threshold": 3},
+            {"category": "HARM_CATEGORY_DANGEROUS", "threshold": 3},
+        ],
+    }
 
-    completion = palm.generate_text(
-        model=model, prompt=prompt, temperature=0, max_output_tokens=500
-    )
-    print(completion.result)
+    completion = palm.generate_text(**defaults, prompt=prompt)
+
     parsed_values = parse_gpt_values(completion.result)
     return parsed_values
 
 
-def gpt_job_analyze(list_of_opps) -> List[Opportunity]:
+def gpt_job_analyze(list_of_opps: List[Opportunity], prompt: str) -> List[Opportunity]:
     """Analyzes each job opportunity before being inserted into the DB"""
 
     print(f"The jobs original length before filtering: {len(list_of_opps)}")
-
-    prompt = """
-        Your role is to assess job opportunities 
-        for college students in the tech industry, 
-        particularly those pursuing Computer Science 
-        majors and seeking entry-level positions. 
-        To aid in this decision-making process, 
-        please respond with a minified single JSON 
-        list of booleans (True/False) only, 
-        indicating whether each job aligns with our 
-        goal of offering entry-level tech-related 
-        positions to college students. 
-        The list should contain only the booleans 
-        (True/False) without any additional comments.
-        """
 
     for opp in list_of_opps:
         prompt += f"\nCompany: {opp.company}"
@@ -216,13 +215,13 @@ def gpt_job_analyze(list_of_opps) -> List[Opportunity]:
         prompt += "\n"
 
     parsed_values = []
-    for _ in range(MAX_RETRY):  # Keep looping until a valid prompt is recieved
+    for _ in range(MAX_RETRY):  # Keep looping until a valid prompt is received
         try:
             parsed_values = get_parsed_values(prompt)
             break
         except (
             json.decoder.JSONDecodeError
-        ):  # The type of error that would be recieved is type JSON
+        ):  # The type of error that would be received is type JSON
             sleep(0.5)
 
     print(f" Below are the parsed values from GPT\n {parsed_values}")

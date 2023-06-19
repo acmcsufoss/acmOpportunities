@@ -130,7 +130,7 @@ def update_opportunities_status(data_results):
 
 
 def format_opportunities(data_results) -> str:
-    """Recieves data from list_filtered_opporunities() and returns a single string message"""
+    """Receives data from list_filtered_opporunities() and returns a single string message"""
 
     formatted_string = ""
 
