@@ -36,7 +36,7 @@ def create(table_name):
 def request_github_internship24_data() -> List[Opportunity]:
     """Scrapes Internship Data '24 from Github Repo"""
 
-    url = os.getenv("GITHUB_INTERN24_URL")
+    url = os.getenv("GH_INTERN24_URL")
     parse_content = utils.content_parser(url)
     github_list = []
     td_elems = parse_content.find_all("td")
