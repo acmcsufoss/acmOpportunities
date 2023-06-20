@@ -14,17 +14,16 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 3. Set the required environment variables.
 4. To run the program manually, write `python ./main.py --days-needed 2`.
 
-
 > ℹ️ **PLEASE NOTE THE FOLLOWING** ℹ️<br/>
 > Please adjust the amount of days needed
-> when using the `--days-needed` command.<br/>
-> **Additionally**, please update the workflow on `line 40` in
+> when using the `--days-needed` command.<br/> > **Additionally**, please update the workflow on `line 40` in
 > `./github/workflows` to correspond to the
 > wanted amount of days.
 
 ## Example response
 
 ![image](https://github.com/acmcsufoss/acmOpportunities/assets/116927138/d4962302-adee-4d41-a2c4-fccdeacd8710)
+
 ---
 
 Made with 🐱💙 by [**@boushrabettir**](https://github.com/boushrabettir)
