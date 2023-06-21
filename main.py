@@ -46,7 +46,7 @@ def request_github_internship24_data() -> List[Opportunity]:
 
     for cell in td_elems:
         temp.append(cell)
-        if len(github_list) < 15:
+        if len(github_list) < 10:
             if (
                 len(temp) == 3
             ):  # A length of three indicates a complete row has been searched
@@ -112,7 +112,7 @@ def request_linkedin_internship24_data() -> List[Opportunity]:
         "job-search-card__location",
         "base-card__full-link",
         True,
-        5,
+        10,
         OpportunityType.INTERNSHIP.value,
     )
 
