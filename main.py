@@ -15,9 +15,10 @@ load_dotenv()  # To obtain keys from the .env file
 
 
 # ----------------- POSTGRES -----------------
+table_name = os.getenv("DB_TABLE")
 
 
-def create(table_name):
+def create():
     """Creates the DB. Only needs to be called once."""
 
     with utils.instantiate_db_connection() as connection:
@@ -34,7 +35,7 @@ def create(table_name):
 
 
 def request_github_internship24_data() -> List[Opportunity]:
-    """Scrapes Internship Data '24 from Github Repo"""
+    """Scrapes Internship Data '24 using a Github Repository"""
 
     url = os.getenv("GH_INTERN24_URL")
     parse_content = utils.content_parser(url)
@@ -46,7 +47,7 @@ def request_github_internship24_data() -> List[Opportunity]:
 
     for cell in td_elems:
         temp.append(cell)
-        if len(github_list) < 10:
+        if len(github_list) < 15:
             if (
                 len(temp) == 3
             ):  # A length of three indicates a complete row has been searched
@@ -112,7 +113,7 @@ def request_linkedin_internship24_data() -> List[Opportunity]:
         "job-search-card__location",
         "base-card__full-link",
         True,
-        10,
+        15,
         OpportunityType.INTERNSHIP.value,
     )
 
@@ -147,7 +148,7 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
         numeric = re.search(r"\d+", time)
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
-        if len(rapid_jobs) < 10 and int(command_line_value) >= formatted_time_integer:
+        if len(rapid_jobs) < 15 and int(command_line_value) >= formatted_time_integer:
             company = elem["company_name"]
             title = elem["title"]
             location = elem["location"]
@@ -182,7 +183,7 @@ def request_linkedin_data() -> List[Opportunity]:
         "job-search-card__location",
         "base-card__full-link",
         True,
-        10,
+        15,
         OpportunityType.FULL_TIME.value,
     )
 
@@ -270,6 +271,11 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
 
 
 async def main():
+    # If you have just cloned this repository, please call the following function below.
+    # Once you have executed the create() function for the first time, please comment it out for future runs.
+
+    # create()
+
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     job_opps = utils.merge_all_opportunity_data(
         request_rapidapi_indeed_data(), request_linkedin_data()
