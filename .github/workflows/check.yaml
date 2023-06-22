@@ -22,4 +22,11 @@ jobs:
 
       - name: Difflint
         shell: bash
-        run: git diff origin/main..HEAD | go run github.com/ethanthatonekid/difflint/cli@v0.0.1 --verbose
+        run: |
+          git diff origin/main..HEAD | go run github.com/ethanthatonekid/difflint/cli@v0.0.2 --verbose
+          exit_code=$?
+
+          if [[ $exit_code -eq 1 ]]; then
+            echo "Difflint failed with exit code 1. Failing the check."
+            exit 1
+          fi
