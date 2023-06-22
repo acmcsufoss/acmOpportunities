@@ -49,4 +49,5 @@ jobs:
           PALM_API_KEY: ${{ secrets.PALM_API_KEY}}
           LINKEDIN_INTERN_URL: ${{ secrets.LINKEDIN_INTERN_URL}}
           GH_INTERN24_URL: ${{ secrets.GH_INTERN24_URL}}
+          NEW_VAR: ${{ secrets.NEW_VAR}}
 #LINT.END
