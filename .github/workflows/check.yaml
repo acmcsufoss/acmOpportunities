@@ -3,6 +3,8 @@ name: check
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 jobs:
   check:
@@ -15,7 +17,8 @@ jobs:
           go-version: "1.19"
 
       - uses: actions/checkout@v3
-        fetch-depth: 0
+        with:
+          fetch-depth: 0
 
       - name: Difflint
         shell: bash
