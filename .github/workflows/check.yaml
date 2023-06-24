@@ -23,7 +23,7 @@ jobs:
       - name: Difflint
         shell: bash
         run: |
-          git diff origin/main..HEAD | go run github.com/ethanthatonekid/difflint/cli@v0.0.3 --verbose
+          git diff origin/main..HEAD | go run github.com/ethanthatonekid/difflint/cli@v0.0.6 --verbose
           exit_code=$?
 
           if [[ $exit_code -eq 1 ]]; then
