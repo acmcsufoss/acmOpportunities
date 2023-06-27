@@ -20,6 +20,11 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 > `./github/workflows` to correspond to the
 > wanted amount of days.
 
+## Develop
+
+- If you don't black installed, write `pip install black`.
+- If there exists formatting and linting errors please type, `python -m black .` to view those errors.
+
 ## Example response
 
 ![image](https://github.com/acmcsufoss/acmOpportunities/assets/116927138/d4962302-adee-4d41-a2c4-fccdeacd8710)
