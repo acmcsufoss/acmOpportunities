@@ -13,7 +13,7 @@ from opportunity import Opportunity
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
 
-def extract_command_value() -> object:
+def extract_command_value():
     """Returns the value of type str prompted in the command line following --days-needed"""
 
     parser = argparse.ArgumentParser(
@@ -32,13 +32,13 @@ def extract_command_value() -> object:
     # Parse the argument and insert into a variable
     arguments = parser.parse_args()
 
-    # Create a new variable to access the --days-needed command
-    days_needed_variable = arguments.days_needed
+    # # Create a new variable to access the --days-needed command
+    # days_needed_variable = arguments.days_needed
 
-    create_table = arguments.create
+    # create_table = arguments.create
 
-    # Return the value from the --days-needed custom command
-    return {"days_needed": days_needed_variable, "create_table": create_table}
+    # # Return the value from the --days-needed custom command
+    return arguments
 
 
 def instantiate_db_connection():
@@ -81,7 +81,7 @@ def blueprint_opportunity_formatter(
     """Helper function which serves as a data extraction blueprint for specific formatting"""
 
     div = content.find_all("div", class_=div_elem)
-    command_line_value = extract_command_value()["days_needed"]
+    command_line_value = extract_command_value().days_needed
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()

@@ -141,7 +141,7 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
     rapid_jobs = []
     response = requests.get(url, headers=headers).json()
 
-    command_line_value = utils.extract_command_value()["days_needed"]
+    command_line_value = utils.extract_command_value().days_needed
     # Extracts command-line value
 
     for elem in response["hits"]:
@@ -277,8 +277,8 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
 
 async def main():
     # Creates table in database
-    command_line_value = utils.extract_command_value()["create_table"]
-    if command_line_value:
+    with_create_table_command = utils.extract_command_value().create
+    if with_create_table_command:
         create()
         print(f"Sucessfully created {TABLE_NAME}!")
         exit()  # Exit the main function to avoid calling other functions

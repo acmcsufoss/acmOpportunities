@@ -12,7 +12,7 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 1. Install [Python](https://www.python.org/downloads/).
 2. Pip install the dependencies of main.py using `pip install -r requirements.txt`.
 3. Set the required environment variables.
-4. Call the function `create()` on `line 277` in `main.py` **only once**.
+4. To create the table, write `python ./main --create` once.
 5. To run the program manually, write `python ./main.py --days-needed 2`.
 
 > ℹ️ **PLEASE NOTE THE FOLLOWING** ℹ️<br/>
