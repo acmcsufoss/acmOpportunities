@@ -76,7 +76,7 @@ def blueprint_opportunity_formatter(
     """Helper function which serves as a data extraction blueprint for specific formatting"""
 
     div = content.find_all("div", class_=div_elem)
-    command_line_value = extract_command_value().days_needed
+    days_needed_command_value = extract_command_value().days_needed
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
@@ -87,7 +87,7 @@ def blueprint_opportunity_formatter(
 
         date_difference = calculate_day_difference(elem)
         if len(internship_list) < len_of_jobs:
-            if date_limit and int(command_line_value) >= date_difference:
+            if date_limit and int(days_needed_command_value) >= date_difference:
                 opportunity = Opportunity(
                     company, title, location, link, processed, opp_type
                 )

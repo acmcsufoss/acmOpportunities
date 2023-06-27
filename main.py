@@ -141,7 +141,7 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
     rapid_jobs = []
     response = requests.get(url, headers=headers).json()
 
-    command_line_value = utils.extract_command_value().days_needed
+    days_needed_command_value = utils.extract_command_value().days_needed
     # Extracts command-line value
 
     for elem in response["hits"]:
@@ -152,7 +152,7 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
 
         if (
             len(rapid_jobs) < MAX_LIST_LENGTH
-            and int(command_line_value) >= formatted_time_integer
+            and int(days_needed_command_value) >= formatted_time_integer
         ):
             company = elem["company_name"]
             title = elem["title"]
