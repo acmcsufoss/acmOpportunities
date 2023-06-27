@@ -32,12 +32,7 @@ def extract_command_value():
     # Parse the argument and insert into a variable
     arguments = parser.parse_args()
 
-    # # Create a new variable to access the --days-needed command
-    # days_needed_variable = arguments.days_needed
-
-    # create_table = arguments.create
-
-    # # Return the value from the --days-needed custom command
+    # Return the value from the --days-needed custom command
     return arguments
 
 
