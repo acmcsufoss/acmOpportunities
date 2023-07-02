@@ -22,17 +22,19 @@ def extract_command_value() -> str:
 
     # Add an argument (the custom command) along with the help functionality to see what the command does
     parser.add_argument(
-        "--days-needed", type=str, help="The number of days needed to fetch jobs."
+        "--days-needed",
+        type=str,
+        help="The number of days needed to fetch jobs.",
+    )
+
+    parser.add_argument(
+        "--create", action="store_true", help="Creates the table in your database."
     )
 
     # Parse the argument and insert into a variable
     arguments = parser.parse_args()
 
-    # Create a new variable to access the --days-needed command
-    days_needed_variable = arguments.days_needed
-
-    # Return the value from the --days-needed custom command
-    return days_needed_variable
+    return arguments
 
 
 def instantiate_db_connection():
@@ -75,7 +77,7 @@ def blueprint_opportunity_formatter(
     """Helper function which serves as a data extraction blueprint for specific formatting"""
 
     div = content.find_all("div", class_=div_elem)
-    command_line_value = extract_command_value()
+    days_needed_command_value = extract_command_value().days_needed
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
@@ -86,7 +88,7 @@ def blueprint_opportunity_formatter(
 
         date_difference = calculate_day_difference(elem)
         if len(internship_list) < len_of_jobs:
-            if date_limit and int(command_line_value) >= date_difference:
+            if date_limit and int(days_needed_command_value) >= date_difference:
                 opportunity = Opportunity(
                     company, title, location, link, processed, opp_type
                 )
@@ -119,14 +121,13 @@ def merge_all_opportunity_data(*args) -> List[Opportunity]:
     return merged_opp_list
 
 
-def add_column(column_name, default) -> None:
+def add_column(column_name: str, data_type: str) -> None:
     """Adds a column for adjustment to the table after the table has been created"""
+
     with instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
-        cursor.execute(
-            f"ALTER TABLE jobs_table ADD COLUMN {column_name} VARCHAR(255) DEFAULT '{default}'"
-        )
+        cursor.execute(f"ALTER TABLE jobs_table ADD COLUMN {column_name} {data_type}")
 
         connection.commit()
 

@@ -4,6 +4,7 @@ import json
 import asyncio
 from typing import List
 import re
+import datetime
 from datetime import date
 import utility as utils
 import opportunity as opps
@@ -16,15 +17,18 @@ load_dotenv()  # To obtain keys from the .env file
 
 # ----------------- POSTGRES -----------------
 
+TABLE_NAME = os.getenv("DB_TABLE")
+MAX_LIST_LENGTH = 15
 
-def create(table_name):
+
+def create():
     """Creates the DB. Only needs to be called once."""
 
     with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
-            f"""CREATE TABLE IF NOT EXISTS {table_name}(company TEXT, title TEXT, location TEXT, link TEXT, processed INTEGER DEFAULT 0)"""
+            f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME}(company TEXT, title TEXT, location TEXT, link TEXT, processed INTEGER DEFAULT 0)"""
         )
 
         connection.commit()
@@ -46,7 +50,7 @@ def request_github_internship24_data() -> List[Opportunity]:
 
     for cell in td_elems:
         temp.append(cell)
-        if len(github_list) < 10:
+        if len(github_list) < MAX_LIST_LENGTH:
             if (
                 len(temp) == 3
             ):  # A length of three indicates a complete row has been searched
@@ -112,7 +116,7 @@ def request_linkedin_internship24_data() -> List[Opportunity]:
         "job-search-card__location",
         "base-card__full-link",
         True,
-        10,
+        MAX_LIST_LENGTH,
         OpportunityType.INTERNSHIP.value,
     )
 
@@ -139,7 +143,9 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
     rapid_jobs = []
     response = requests.get(url, headers=headers).json()
 
-    command_line_value = utils.extract_command_value()  # Extracts command-line value
+    days_needed_command_value = (
+        utils.extract_command_value().days_needed
+    )  # Extracts command-line value
 
     for elem in response["hits"]:
         time = elem["formatted_relative_time"]
@@ -147,7 +153,10 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
         numeric = re.search(r"\d+", time)
         formatted_time_integer = int(numeric.group()) if numeric else 0
 
-        if len(rapid_jobs) < 10 and int(command_line_value) >= formatted_time_integer:
+        if (
+            len(rapid_jobs) < MAX_LIST_LENGTH
+            and int(days_needed_command_value) >= formatted_time_integer
+        ):
             company = elem["company_name"]
             title = elem["title"]
             location = elem["location"]
@@ -182,7 +191,7 @@ def request_linkedin_data() -> List[Opportunity]:
         "job-search-card__location",
         "base-card__full-link",
         True,
-        10,
+        MAX_LIST_LENGTH,
         OpportunityType.FULL_TIME.value,
     )
 
@@ -192,14 +201,14 @@ def request_linkedin_data() -> List[Opportunity]:
 # ----------------- RESET FUNCTION (DEBUGGING PURPOSES) -----------------
 
 
-def reset_processed_status(table_name):
+def reset_processed_status(TABLE_NAME):
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
     with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
-            f"SELECT company, title, location FROM {table_name} WHERE processed = 1 LIMIT 5"
+            f"SELECT company, title, location FROM {TABLE_NAME} WHERE processed = 1 LIMIT 5"
         )
 
         rows = cursor.fetchall()
@@ -208,7 +217,7 @@ def reset_processed_status(table_name):
             company, title, location = row[:3]
 
             cursor.execute(
-                f"UPDATE {table_name} SET processed = 0 WHERE company = %s AND title = %s AND location = %s",
+                f"UPDATE {TABLE_NAME} SET processed = 0 WHERE company = %s AND title = %s AND location = %s",
                 (company, title, location),
             )
 
@@ -270,6 +279,13 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
 
 
 async def main():
+    # Creates table in database
+    with_create_table_command = utils.extract_command_value().create
+    if with_create_table_command:
+        create()
+        print(f"Sucessfully created {TABLE_NAME}!")
+        exit()  # Exit the main function to avoid calling other functions
+
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     job_opps = utils.merge_all_opportunity_data(
         request_rapidapi_indeed_data(), request_linkedin_data()
