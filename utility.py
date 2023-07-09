@@ -24,7 +24,12 @@ def extract_command_value() -> str:
     parser.add_argument(
         "--days-needed",
         type=str,
-        help="The number of days needed to fetch jobs.",
+        nargs="3",
+        help="""
+            First Argument: The amount of days to extract jobs.
+            Second Argument: File path to message.txt for customized message
+            Third Argument: File path to prompt.txt for customized prompt(s)
+        """,
     )
 
     parser.add_argument(
@@ -35,13 +40,6 @@ def extract_command_value() -> str:
     arguments = parser.parse_args()
 
     return arguments
-
-
-def instantiate_db_connection():
-    """Returns the connection from the DB"""
-
-    db_uri = os.getenv("DB_URI")
-    return psycopg2.connect(db_uri)
 
 
 def calculate_day_difference(elem: datetime) -> int:
@@ -77,7 +75,7 @@ def blueprint_opportunity_formatter(
     """Helper function which serves as a data extraction blueprint for specific formatting"""
 
     div = content.find_all("div", class_=div_elem)
-    days_needed_command_value = extract_command_value().days_needed
+    days_needed_command_value = extract_command_value().days_needed[0]
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
@@ -121,24 +119,33 @@ def merge_all_opportunity_data(*args) -> List[Opportunity]:
     return merged_opp_list
 
 
-def add_column(column_name: str, data_type: str) -> None:
-    """Adds a column for adjustment to the table after the table has been created"""
+def extract_data(text: str, i: int) -> str:
+    """Extracts user customiztion data"""
 
-    with instantiate_db_connection() as connection:
-        cursor = connection.cursor()
+    indices = [indx for indx in range(len(text)) if text.startswith('"""', indx)]
+    final_text = text[indices[i] + 3].strip()
 
-        cursor.execute(f"ALTER TABLE jobs_table ADD COLUMN {column_name} {data_type}")
-
-        connection.commit()
+    return final_text
 
 
-def delete_alL_opportunity_type(opp_type: str) -> None:
-    """Deletes all opportunities of a specific type for testing purposes only"""
-    with instantiate_db_connection() as connection:
-        cursor = connection.cursor()
+def user_customization(file_paths: List[str]) -> dict:
+    """Returns users customization for either message or prompt"""
 
-        cursor.execute("DELETE FROM jobs_table WHERE type = %s", (opp_type,))
-        connection.commit()
+    customized_user_paths = file_paths[1:]
+
+    data = []
+
+    starting_index_points = [3, 9]
+    for file_path, starting_index in zip(customized_user_paths, starting_index_points):
+        try:
+            with open(file_path, "r") as file:
+                text = file.read()
+                user_data = extract_data(text, starting_index)
+                data.append(user_data)
+        except OSError:
+            print(f"Unable to open/read file path: '{file_path}'")
+
+    return {"customized_message": data[0], "customized_prompts": data[1]}
 
 
 # ----------------- PALM API -----------------
@@ -164,11 +171,13 @@ def current_model_inuse() -> any:
 
 def parse_gpt_values(gpt_response) -> List[bool]:
     """Helper function to parse the gpt response from a str -> List[bool]"""
+
     return json.loads(gpt_response.lower())
 
 
 def filter_out_opportunities(list_of_opps, gpt_response) -> List[Opportunity]:
     """Helper function for gpt_job_analyzer() to filter the data"""
+
     structured_opps = [
         opp for opp, response in zip(list_of_opps, gpt_response) if response
     ]

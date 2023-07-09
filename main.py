@@ -7,6 +7,7 @@ import re
 import datetime
 from datetime import date
 import utility as utils
+import db
 import opportunity as opps
 from opportunity import Opportunity, OpportunityType
 from prompts import PROMPTS
@@ -24,7 +25,7 @@ MAX_LIST_LENGTH = 15
 def create():
     """Creates the DB. Only needs to be called once."""
 
-    with utils.instantiate_db_connection() as connection:
+    with db.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -143,9 +144,9 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
     rapid_jobs = []
     response = requests.get(url, headers=headers).json()
 
-    days_needed_command_value = (
-        utils.extract_command_value().days_needed
-    )  # Extracts command-line value
+    days_needed_command_value = utils.extract_command_value().days_needed[
+        0
+    ]  # Extracts command-line value
 
     for elem in response["hits"]:
         time = elem["formatted_relative_time"]
@@ -204,7 +205,7 @@ def request_linkedin_data() -> List[Opportunity]:
 def reset_processed_status(TABLE_NAME):
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
-    with utils.instantiate_db_connection() as connection:
+    with db.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -278,6 +279,9 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
         print(f"Failed to send webhook message. Status Code: {response.status_code}")
 
 
+# TODO: Utilize functions from utility.py to work with the customized user inputs
+
+
 async def main():
     # Creates table in database
     with_create_table_command = utils.extract_command_value().create
@@ -331,5 +335,5 @@ async def main():
     opps.update_opportunities_status(internship_data_results)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())

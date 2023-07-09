@@ -12,7 +12,7 @@
     
                         Please view the following examples:
 
-               1) [
+               1) {
                         "OpportunityType.FULL_TIME": """
                           Our club comprises a dedicated group 
                           of cybersecurity students, all of whom 
@@ -20,14 +20,10 @@
                           job opportunities.
                         """,
                         "OpportunityType.INTERNSHIP": """
-                          Our club comprises a dedicated group 
-                          of cybersecurity students, all of whom 
-                          are actively seeking entry-level 
-                          internship opportunities.
                         """,
-                  ]
+                  }
 
-                2) [
+                2) {
                         "OpportunityType.FULL_TIME": """
                           Our distinguished group comprises a 
                           dynamic assembly of ambitious business 
@@ -46,6 +42,15 @@
                           entrepreneurs are seeking highly advance
                           internship opportunities.
                         """,
-                   ]
+                   }
                  
 """
+
+{
+  "OpportunityType.FULL_TIME": """
+    
+  """,
+  "OpportunityType.INTERNSHIP": """
+  
+  """,
+}
