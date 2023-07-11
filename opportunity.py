@@ -86,7 +86,7 @@ def list_opportunities(
         return read_all_opportunities(rows, debug)
 
 
-def read_all_opportunities(rows, debug_tool) -> List[Opportunity]:
+def read_all_opportunities(rows, debug_tool: bool) -> List[Opportunity]:
     """Helper function designed to return filtered or unfiltered opportunities"""
     opportunities = []
 
@@ -109,7 +109,7 @@ def read_all_opportunities(rows, debug_tool) -> List[Opportunity]:
     return opportunities
 
 
-def update_opportunities_status(data_results):
+def update_opportunities_status(data_results: List[Opportunity]) -> None:
     """Updates the status of the jobs to processed = 1 after it's been sent by the discord bot"""
 
     with db.instantiate_db_connection() as connection:
@@ -129,7 +129,7 @@ def update_opportunities_status(data_results):
         connection.commit()
 
 
-def format_opportunities(data_results) -> str:
+def format_opportunities(data_results: str, formatted_text: str) -> str:
     """Receives data from list_filtered_opporunities() and returns a single string message"""
 
     formatted_string = ""
@@ -140,6 +140,9 @@ def format_opportunities(data_results) -> str:
         location = data_block.location
         link = data_block.link
 
-        formatted_string += f"[**{company}**]({link}): {title} `@{location}`!\n"
+        formatted_string += formatted_text.format(
+            company=company, title=title, location=location, link=link
+        )
+        formatted_string += "\n"
 
     return formatted_string

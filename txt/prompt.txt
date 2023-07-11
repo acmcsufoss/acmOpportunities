@@ -13,44 +13,18 @@
                         Please view the following examples:
 
                1) {
-                        "OpportunityType.FULL_TIME": """
-                          Our club comprises a dedicated group 
-                          of cybersecurity students, all of whom 
-                          are actively seeking entry-level 
-                          job opportunities.
-                        """,
-                        "OpportunityType.INTERNSHIP": """
-                        """,
+                        "OpportunityType.FULL_TIME": "Our club comprises a dedicated group of cybersecurity students, all of whom are actively seeking entry-level job opportunities.",
+                        "OpportunityType.INTERNSHIP": "",
                   }
 
                 2) {
-                        "OpportunityType.FULL_TIME": """
-                          Our distinguished group comprises a 
-                          dynamic assembly of ambitious business 
-                          entrepreneurs, all united by their 
-                          unwavering quest for career advancement 
-                          and skill enhancement. Our business
-                          entrepreneurs are seeking highly advance
-                          job opportunities.
-                        """,
-                        "OpportunityType.INTERNSHIP": """
-                          Our distinguished group comprises a 
-                          dynamic assembly of ambitious business 
-                          entrepreneurs, all united by their 
-                          unwavering quest for career advancement 
-                          and skill enhancement. Our business
-                          entrepreneurs are seeking highly advance
-                          internship opportunities.
-                        """,
+                        "OpportunityType.FULL_TIME": "Our distinguished group comprises a dynamic assembly of ambitious business entrepreneurs, all united by their unwavering quest for career advancement and skill enhancement. Our business entrepreneurs are seeking highly advance job opportunities.",
+                        "OpportunityType.INTERNSHIP": "Our distinguished group comprises a dynamic assembly of ambitious business entrepreneurs, all united by their unwavering quest for career advancement and skill enhancement. Our business entrepreneurs are seeking highly advance internship opportunities.",
                    }
                  
 """
 
 {
-  "OpportunityType.FULL_TIME": """
-    
-  """,
-  "OpportunityType.INTERNSHIP": """
-  
-  """,
+  "OpportunityType.FULL_TIME": "",
+  "OpportunityType.INTERNSHIP": ""
 }

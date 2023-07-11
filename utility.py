@@ -1,5 +1,4 @@
 from datetime import date, datetime
-import psycopg2
 import requests
 from typing import List
 import os
@@ -8,7 +7,8 @@ from time import sleep
 import json
 import google.generativeai as palm
 from bs4 import BeautifulSoup
-from opportunity import Opportunity
+from opportunity import Opportunity, OpportunityType
+from prompts import PROMPTS
 
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
@@ -24,7 +24,7 @@ def extract_command_value() -> str:
     parser.add_argument(
         "--days-needed",
         type=str,
-        nargs="3",
+        nargs=3,
         help="""
             First Argument: The amount of days to extract jobs.
             Second Argument: File path to message.txt for customized message
@@ -119,33 +119,58 @@ def merge_all_opportunity_data(*args) -> List[Opportunity]:
     return merged_opp_list
 
 
-def extract_data(text: str, i: int) -> str:
+def extract_data(text: str) -> str:
     """Extracts user customiztion data"""
 
     indices = [indx for indx in range(len(text)) if text.startswith('"""', indx)]
-    final_text = text[indices[i] + 3].strip()
+    last_index = indices[1] + 3
+    final_text = text[last_index:].strip()
 
     return final_text
 
 
 def user_customization(file_paths: List[str]) -> dict:
-    """Returns users customization for either message or prompt"""
-
-    customized_user_paths = file_paths[1:]
+    """Returns users customization for both message and prompt"""
 
     data = []
 
-    starting_index_points = [3, 9]
-    for file_path, starting_index in zip(customized_user_paths, starting_index_points):
+    for file_path in file_paths:
         try:
             with open(file_path, "r") as file:
                 text = file.read()
-                user_data = extract_data(text, starting_index)
+                user_data = extract_data(text)
                 data.append(user_data)
         except OSError:
             print(f"Unable to open/read file path: '{file_path}'")
 
     return {"customized_message": data[0], "customized_prompts": data[1]}
+
+
+def determine_prompts(customized_prompts: dict) -> object:
+    """Determines the final PaLM prompt"""
+
+    final_prompt_object = {}
+    prompts = json.loads(customized_prompts)
+
+    full_time_prompt = prompts["OpportunityType.FULL_TIME"]
+    internship_prompt = prompts["OpportunityType.INTERNSHIP"]
+
+    final_prompt_object["full_time"] = (
+        full_time_prompt if full_time_prompt else PROMPTS[OpportunityType.FULL_TIME]
+    )
+
+    final_prompt_object["internship"] = (
+        internship_prompt if internship_prompt else PROMPTS[OpportunityType.INTERNSHIP]
+    )
+
+    return final_prompt_object
+
+
+def determine_customized_message(message: dict) -> str:
+    """Determines the customized text for the webhook"""
+    default = "[**{company}**]({link}): {title} `@{location}`!"
+
+    return message if message else default
 
 
 # ----------------- PALM API -----------------
