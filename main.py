@@ -50,10 +50,12 @@ def request_github_internship24_data() -> List[Opportunity]:
         if len(github_list) < MAX_LIST_LENGTH:
             if (
                 len(temp) == 3
-            ):  # A length of three indicates a complete row has been searched
+            ):  # A length of three indicates a complete row has been searched.
                 company = temp[0]
                 location = temp[1].text
                 title = temp[2]
+
+                # This list holds all of the link(s) within the title(s).
                 t = temp[2].find_all("a")
 
                 if len(title) == 1:
@@ -65,7 +67,13 @@ def request_github_internship24_data() -> List[Opportunity]:
                         company.text,
                         title.text,
                         location,
-                        company.find("a")["href"],
+                        # When given a single title, the link can exist within
+                        # either the company text or the title text.
+                        # To ensure the link gets processed correctly,
+                        # it's essential to apply a simple conditional check similar to below.
+                        company.find("a")["href"]
+                        if company.find("a")
+                        else t[0]["href"],
                         0,
                         OpportunityType.INTERNSHIP.value,
                     )
