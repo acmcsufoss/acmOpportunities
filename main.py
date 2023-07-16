@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
 
-
 # ----------------- POSTGRES -----------------
 TABLE_NAME = os.getenv("DB_TABLE")
 MAX_LIST_LENGTH = 15
