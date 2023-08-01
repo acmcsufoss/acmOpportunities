@@ -131,56 +131,6 @@ def request_linkedin_internship24_data() -> List[Opportunity]:
 # ----------------- JOB DATA -----------------
 
 
-def request_rapidapi_indeed_data() -> List[Opportunity]:
-    """
-    This API call retrieves a formatted response object
-    and returns a List[Opportunity] as the result
-    """
-
-    url = os.getenv("RAPID_API_URL")
-    rapid_api_key = os.getenv("RAPID_API_KEY")
-
-    headers = {
-        "X-RapidAPI-Key": rapid_api_key,
-        "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
-    }
-
-    rapid_jobs = []
-    response = requests.get(url, headers=headers).json()
-
-    days_needed_command_value = utils.extract_command_value().days_needed
-    # Extracts command-line value
-
-    for elem in response["hits"]:
-        time = elem["formatted_relative_time"]
-
-        numeric = re.search(r"\d+", time)
-        formatted_time_integer = int(numeric.group()) if numeric else 0
-
-        if (
-            len(rapid_jobs) < MAX_LIST_LENGTH
-            and int(days_needed_command_value) >= formatted_time_integer
-        ):
-            company = elem["company_name"]
-            title = elem["title"]
-            location = elem["location"]
-            link = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
-            processed = 0
-
-            opportunity = Opportunity(
-                company,
-                title,
-                location,
-                link,
-                processed,
-                OpportunityType.FULL_TIME.value,
-            )
-
-            rapid_jobs.append(opportunity)
-
-    return rapid_jobs
-
-
 def request_linkedin_data() -> List[Opportunity]:
     """Returns a List[Opportunity] which contains web scraped job content"""
 
@@ -291,9 +241,7 @@ async def main():
         exit()  # Exit the main function to avoid calling other functions
 
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
-    job_opps = utils.merge_all_opportunity_data(
-        request_rapidapi_indeed_data(), request_linkedin_data()
-    )
+    job_opps = utils.merge_all_opportunity_data(request_linkedin_data())
     filtered_job_opps = utils.gpt_job_analyze(
         job_opps,
         PROMPTS[OpportunityType.FULL_TIME],
