@@ -13,13 +13,15 @@ from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
 
+
 # ----------------- POSTGRES -----------------
+
 TABLE_NAME = os.getenv("DB_TABLE")
 MAX_LIST_LENGTH = 15
 
 
 def create():
-    """Creates the DB. Only needs to be called once."""
+    """Creates the utils. Only needs to be called once."""
 
     with utils.instantiate_db_connection() as connection:
         cursor = connection.cursor()
@@ -35,7 +37,7 @@ def create():
 
 
 def request_github_internship24_data() -> List[Opportunity]:
-    """Scrapes Internship Data '24 using a Github Repository"""
+    """Scrapes Internship Data '24 from Github Repo"""
 
     url = os.getenv("GH_INTERN24_URL")
     parse_content = utils.content_parser(url)
@@ -50,12 +52,10 @@ def request_github_internship24_data() -> List[Opportunity]:
         if len(github_list) < MAX_LIST_LENGTH:
             if (
                 len(temp) == 3
-            ):  # A length of three indicates a complete row has been searched.
+            ):  # A length of three indicates a complete row has been searched
                 company = temp[0]
                 location = temp[1].text
                 title = temp[2]
-
-                # This list holds all of the link(s) within the title(s).
                 t = temp[2].find_all("a")
 
                 if len(title) == 1:
@@ -67,41 +67,36 @@ def request_github_internship24_data() -> List[Opportunity]:
                         company.text,
                         title.text,
                         location,
-                        # When given a single title, the link can exist within
-                        # either the company text or the title text.
-                        # To ensure the link gets processed correctly,
-                        # it's essential to apply a simple conditional check similar to below.
-                        company.find("a")["href"]
-                        if company.find("a")
-                        else t[0]["href"],
+                        company.find("a")["href"],
                         0,
                         OpportunityType.INTERNSHIP.value,
                     )
                     github_list.append(opportunity)
 
-                for i in t:
-                    # In cases where the title consists of multiple elements,
-                    # it is possible that the link may or may not be present within
-                    # the current title element. There are instances where the title
-                    # text matches the location text, as each location may have its
-                    # own link. If not taken care of, the title text will result in
-                    # the location. To prevent any potential mishaps arising from this,
-                    # the following line of code addresses and resolves the issue.
+                if len(t) > 0:
+                    for i in t:
+                        # In cases where the title consists of multiple elements,
+                        # it is possible that the link may or may not be present within
+                        # the current title element. There are instances where the title
+                        # text matches the location text, as each location may have its
+                        # own link. If not taken care of, the title text will result in
+                        # the location. To prevent any potential mishaps arising from this,
+                        # the following line of code addresses and resolves the issue.
 
-                    fixed_title = title.text if i.text in location else i.text
+                        fixed_title = title.text if i.text in location else i.text
 
-                    opportunity = Opportunity(
-                        company.text,
-                        fixed_title,
-                        location,
-                        i["href"],
-                        0,
-                        OpportunityType.INTERNSHIP.value,
-                    )
-                    github_list.append(opportunity)
+                        opportunity = Opportunity(
+                            company.text,
+                            fixed_title,
+                            location,
+                            i["href"],
+                            0,
+                            OpportunityType.INTERNSHIP.value,
+                        )
+                        github_list.append(opportunity)
 
-                # Resetting temps value in order to hold the next row of data
-                temp = []
+                    # Resetting temps value in order to hold the next row of data
+                    temp = []
 
     return github_list
 
@@ -129,6 +124,57 @@ def request_linkedin_internship24_data() -> List[Opportunity]:
 
 
 # ----------------- JOB DATA -----------------
+
+
+def request_rapidapi_indeed_data() -> List[Opportunity]:
+    """
+    This API call retrieves a formatted response object
+    and returns a List[Opportunity] as the result
+    """
+
+    url = os.getenv("RAPID_API_URL")
+    rapid_api_key = os.getenv("RAPID_API_KEY")
+
+    headers = {
+        "X-RapidAPI-Key": rapid_api_key,
+        "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
+    }
+
+    rapid_jobs = []
+    response = requests.get(url, headers=headers).json()
+
+    days_needed_command_value = utils.extract_command_value().days_needed[
+        0
+    ]  # Extracts command-line value
+
+    for elem in response["hits"]:
+        time = elem["formatted_relative_time"]
+
+        numeric = re.search(r"\d+", time)
+        formatted_time_integer = int(numeric.group()) if numeric else 0
+
+        if (
+            len(rapid_jobs) < MAX_LIST_LENGTH
+            and int(days_needed_command_value) >= formatted_time_integer
+        ):
+            company = elem["company_name"]
+            title = elem["title"]
+            location = elem["location"]
+            link = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
+            processed = 0
+
+            opportunity = Opportunity(
+                company,
+                title,
+                location,
+                link,
+                processed,
+                OpportunityType.FULL_TIME.value,
+            )
+
+            rapid_jobs.append(opportunity)
+
+    return rapid_jobs
 
 
 def request_linkedin_data() -> List[Opportunity]:
