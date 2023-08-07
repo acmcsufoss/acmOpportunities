@@ -73,29 +73,30 @@ def request_github_internship24_data() -> List[Opportunity]:
                     )
                     github_list.append(opportunity)
 
-                for i in t:
-                    # In cases where the title consists of multiple elements,
-                    # it is possible that the link may or may not be present within
-                    # the current title element. There are instances where the title
-                    # text matches the location text, as each location may have its
-                    # own link. If not taken care of, the title text will result in
-                    # the location. To prevent any potential mishaps arising from this,
-                    # the following line of code addresses and resolves the issue.
+                if len(t) > 0:
+                    for i in t:
+                        # In cases where the title consists of multiple elements,
+                        # it is possible that the link may or may not be present within
+                        # the current title element. There are instances where the title
+                        # text matches the location text, as each location may have its
+                        # own link. If not taken care of, the title text will result in
+                        # the location. To prevent any potential mishaps arising from this,
+                        # the following line of code addresses and resolves the issue.
 
-                    fixed_title = title.text if i.text in location else i.text
+                        fixed_title = title.text if i.text in location else i.text
 
-                    opportunity = Opportunity(
-                        company.text,
-                        fixed_title,
-                        location,
-                        i["href"],
-                        0,
-                        OpportunityType.INTERNSHIP.value,
-                    )
-                    github_list.append(opportunity)
+                        opportunity = Opportunity(
+                            company.text,
+                            fixed_title,
+                            location,
+                            i["href"],
+                            0,
+                            OpportunityType.INTERNSHIP.value,
+                        )
+                        github_list.append(opportunity)
 
-                # Resetting temps value in order to hold the next row of data
-                temp = []
+                    # Resetting temps value in order to hold the next row of data
+                    temp = []
 
     return github_list
 

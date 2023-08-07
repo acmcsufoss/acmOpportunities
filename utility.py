@@ -12,7 +12,7 @@ from opportunity import Opportunity, OpportunityType
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
 
-def extract_command_value() -> str:
+def extract_command_value():
     """Returns the value of type str prompted in the command line following --days-needed"""
 
     parser = argparse.ArgumentParser(
@@ -29,6 +29,10 @@ def extract_command_value() -> str:
             Second Argument: File path for customized message.
             Third Argument: File path for customized prompts.
         """,
+    )
+
+    parser.add_argument(
+        "--create", action="store_true", help="Creates the table in your database."
     )
 
     parser.add_argument(

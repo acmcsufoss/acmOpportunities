@@ -12,13 +12,19 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 1. Install [Python](https://www.python.org/downloads/).
 2. Pip install the dependencies of main.py using `pip install -r requirements.txt`.
 3. Set the required environment variables.
-4. To run the program manually, write `python ./main.py --days-needed 2`.
+4. To create the table, write `python ./main --create` once.
+5. To run the program manually, write `python ./main.py --days-needed 2`.
 
 > ℹ️ **PLEASE NOTE THE FOLLOWING** ℹ️<br/>
 > Please adjust the amount of days needed
 > when using the `--days-needed` command.<br/> > **Additionally**, please update the workflow on `line 40` in
 > `./github/workflows` to correspond to the
 > wanted amount of days.
+
+## Develop
+
+- If you don't black installed, write `pip install black`.
+- If there exists formatting and linting errors please type, `python -m black .` to view those errors.
 
 ## Example response
 
