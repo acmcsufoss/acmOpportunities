@@ -37,7 +37,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run script
-        run: python main.py --days-needed 2 ${{ secrets.MESSAGE_PATH}} ${{ secrets.PROMPTS_PATH}}
+        run: python main.py --days-needed 2 PROMPTS_PATH MESSAGE_PATH
         # Custom CLI Command
 
         #LINT.IF .env.example

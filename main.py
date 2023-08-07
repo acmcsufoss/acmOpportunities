@@ -286,7 +286,7 @@ async def main():
         print(f"Sucessfully created {TABLE_NAME}!")
         exit()  # Exit the main function to avoid calling other functions
 
-    file_paths = utils.extract_command_value().days_needed[1:]
+    file_paths = [os.getenv("MESSAGE_PATH"), os.getenv("PROMPTS_PATH")]
     customized_object = utils.user_customization(file_paths)
 
     # Determines the customized prompts for PaLM
@@ -299,6 +299,8 @@ async def main():
 
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     job_opps = utils.merge_all_opportunity_data(request_linkedin_data())
+
+    # TODO - Debug.
     filtered_job_opps = utils.gpt_job_analyze(
         job_opps,
         prompt_object["full_time"],
@@ -310,6 +312,8 @@ async def main():
         request_linkedin_internship24_data(),
         request_github_internship24_data(),
     )
+
+    # TODO - Debug.
     filtered_internship_opps = utils.gpt_job_analyze(
         internship_opps,
         prompt_object["internship"],
@@ -340,8 +344,8 @@ async def main():
         discord_webhook, job_formatted_message, internship_formatted_message
     )
 
-    opps.update_opportunities_status(job_data_results)
-    opps.update_opportunities_status(internship_data_results)
+    # opps.update_opportunities_status(job_data_results)
+    # opps.update_opportunities_status(internship_data_results)
 
 
 # if __name__ == "__main__":

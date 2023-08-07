@@ -23,16 +23,8 @@ def extract_command_value():
     parser.add_argument(
         "--days-needed",
         type=str,
-        nargs=3,
-        help="""
-            First Argument: The amount of days to extract jobs.
-            Second Argument: File path for customized message.
-            Third Argument: File path for customized prompts.
-        """,
-    )
-
-    parser.add_argument(
-        "--create", action="store_true", help="Creates the table in your database."
+        nargs=1,
+        help="The amount of days to extract jobs.",
     )
 
     parser.add_argument(
