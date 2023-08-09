@@ -265,7 +265,6 @@ async def main():
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     job_opps = utils.merge_all_opportunity_data(request_linkedin_data())
 
-    # TODO - Debug.
     filtered_job_opps = utils.gpt_job_analyze(
         job_opps,
         prompt_object["full_time"],
@@ -278,7 +277,6 @@ async def main():
         request_github_internship24_data(),
     )
 
-    # TODO - Debug.
     filtered_internship_opps = utils.gpt_job_analyze(
         internship_opps,
         prompt_object["internship"],
