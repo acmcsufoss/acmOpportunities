@@ -17,9 +17,8 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 
 > ℹ️ **PLEASE NOTE THE FOLLOWING** ℹ️<br/>
 > Please adjust the amount of days needed
-> when using the `--days-needed` command.<br/> > **Additionally**, please update the workflow on `line 40` in
-> `./github/workflows` to correspond to the
-> wanted amount of days.
+> when using the `--days-needed` command.<br/> **Additionally**, please update the workflow in
+> `./github/workflows` to correspond to the wanted amount of days.
 
 ## Develop
 

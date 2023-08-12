@@ -22,6 +22,7 @@ def add_column(column_name: str, data_type: str) -> None:
 
 def delete_alL_opportunity_type(opp_type: str) -> None:
     """Deletes all opportunities of a specific type for testing purposes only"""
+
     with instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
