@@ -42,61 +42,26 @@ def request_github_internship24_data() -> List[Opportunity]:
     url = os.getenv("GH_INTERN24_URL")
     parse_content = utils.content_parser(url)
     github_list = []
-    td_elems = parse_content.find_all("td")
+    td_elems = parse_content.find_all("tr")
 
-    # A temporary list holding the current rows internship data
-    temp = []
+    for cell in td_elems[1:]:
+        if len(github_list) <= MAX_LIST_LENGTH:
+            elements = cell.find_all("td")
 
-    for cell in td_elems:
-        temp.append(cell)
-        if len(github_list) < MAX_LIST_LENGTH:
-            if (
-                len(temp) == 3
-            ):  # A length of three indicates a complete row has been searched
-                company = temp[0]
-                location = temp[1].text
-                title = temp[2]
-                t = temp[2].find_all("a")
-
-                if len(title) == 1:
-                    # If the title length consists of one element,
-                    # this indicates that the link exists within
-                    # the company title and the company title only.
-
-                    opportunity = Opportunity(
-                        company.text,
-                        title.text,
-                        location,
-                        company.find("a")["href"],
-                        0,
-                        OpportunityType.INTERNSHIP.value,
-                    )
-                    github_list.append(opportunity)
-
-                if len(t) > 0:
-                    for i in t:
-                        # In cases where the title consists of multiple elements,
-                        # it is possible that the link may or may not be present within
-                        # the current title element. There are instances where the title
-                        # text matches the location text, as each location may have its
-                        # own link. If not taken care of, the title text will result in
-                        # the location. To prevent any potential mishaps arising from this,
-                        # the following line of code addresses and resolves the issue.
-
-                        fixed_title = title.text if i.text in location else i.text
-
-                        opportunity = Opportunity(
-                            company.text,
-                            fixed_title,
-                            location,
-                            i["href"],
-                            0,
-                            OpportunityType.INTERNSHIP.value,
-                        )
-                        github_list.append(opportunity)
-
-                    # Resetting temps value in order to hold the next row of data
-                    temp = []
+            company = elements[0].text
+            title = elements[1].text
+            location = elements[2].text
+            link = elements[3]
+            if "🔒" not in link.text:
+                opportunity = Opportunity(
+                    company,
+                    title,
+                    location,
+                    link.find("a")["href"],
+                    0,
+                    OpportunityType.INTERNSHIP.value,
+                )
+                github_list.append(opportunity)
 
     return github_list
 
