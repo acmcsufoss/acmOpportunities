@@ -17,7 +17,7 @@ load_dotenv()  # To obtain keys from the .env file
 # ----------------- POSTGRES -----------------
 
 TABLE_NAME = os.getenv("DB_TABLE")
-MAX_LIST_LENGTH = 15
+MAX_LIST_LENGTH = 10
 
 
 def create():

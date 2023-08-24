@@ -155,7 +155,7 @@ def determine_customized_message(message: dict) -> str:
 # ----------------- PALM API -----------------
 
 
-MAX_RETRY = 5  # Max number of retrys for the gpt_job_analyzer() function
+MAX_RETRY = 5  # Max number of retrys
 palm.configure(api_key=os.getenv("PALM_API_KEY"))
 
 
@@ -176,7 +176,16 @@ def current_model_inuse() -> any:
 def parse_gpt_values(gpt_response) -> List[bool]:
     """Helper function to parse the gpt response from a str -> List[bool]"""
 
-    return json.loads(gpt_response.lower())
+    response: List[bool]
+
+    for _ in range(MAX_RETRY):
+        try:
+            response = json.loads(gpt_response.lower())
+            break
+        except AttributeError:
+            sleep(0.5)
+
+    return response
 
 
 def filter_out_opportunities(list_of_opps, gpt_response) -> List[Opportunity]:
