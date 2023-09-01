@@ -39,8 +39,8 @@ jobs:
       - name: Run script
         run: python main.py --days-needed 2 PROMPTS_PATH MESSAGE_PATH
         # Custom CLI Command
-
-        #LINT.IF .env.example
+# fmt: off    
+#LINT.IF .env.example
         env:
           LINKEDIN_URL: ${{ secrets.LINKEDIN_URL}}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK}}
@@ -52,4 +52,4 @@ jobs:
           PROMPTS_PATH: ${{ secrets.PROMPTS_PATH}}
           MESSAGE_PATH: ${{ secrets.MESSAGE_PATH}}
 #LINT.END
-
+# fmt: on  
