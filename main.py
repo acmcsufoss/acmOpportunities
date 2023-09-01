@@ -17,7 +17,7 @@ load_dotenv()  # To obtain keys from the .env file
 # ----------------- POSTGRES -----------------
 
 TABLE_NAME = os.getenv("DB_TABLE")
-MAX_LIST_LENGTH = 10
+MAX_LIST_LENGTH = 13
 
 
 def create():
@@ -311,5 +311,5 @@ async def main():
     opps.update_opportunities_status(internship_data_results)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
