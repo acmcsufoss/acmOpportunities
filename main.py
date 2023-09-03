@@ -311,5 +311,5 @@ async def main():
     opps.update_opportunities_status(internship_data_results)
 
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
