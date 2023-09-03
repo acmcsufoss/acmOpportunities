@@ -6,9 +6,9 @@ from typing import List
 import re
 from datetime import date
 import utility as utils
+import db
 import opportunity as opps
 from opportunity import Opportunity, OpportunityType
-from prompts import PROMPTS
 from dotenv import load_dotenv
 
 load_dotenv()  # To obtain keys from the .env file
@@ -17,13 +17,13 @@ load_dotenv()  # To obtain keys from the .env file
 # ----------------- POSTGRES -----------------
 
 TABLE_NAME = os.getenv("DB_TABLE")
-MAX_LIST_LENGTH = 15
+MAX_LIST_LENGTH = 13
 
 
 def create():
-    """Creates the utils. Only needs to be called once."""
+    """Creates the DB. Only needs to be called once."""
 
-    with utils.instantiate_db_connection() as connection:
+    with db.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -169,7 +169,7 @@ def request_linkedin_data() -> List[Opportunity]:
 def reset_processed_status(TABLE_NAME):
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
-    with utils.instantiate_db_connection() as connection:
+    with db.instantiate_db_connection() as connection:
         cursor = connection.cursor()
 
         cursor.execute(
@@ -251,11 +251,23 @@ async def main():
         print(f"Sucessfully created {TABLE_NAME}!")
         exit()  # Exit the main function to avoid calling other functions
 
+    file_paths = [os.getenv("MESSAGE_PATH"), os.getenv("PROMPTS_PATH")]
+    customized_object = utils.user_customization(file_paths)
+
+    # Determines the customized prompts for PaLM
+    prompt_object = utils.determine_prompts(customized_object["customized_prompts"])
+
+    # Determines the customized message for the webhook
+    finalized_message = utils.determine_customized_message(
+        customized_object["customized_message"]
+    )
+
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     job_opps = utils.merge_all_opportunity_data(request_linkedin_data())
+
     filtered_job_opps = utils.gpt_job_analyze(
         job_opps,
-        PROMPTS[OpportunityType.FULL_TIME],
+        prompt_object["full_time"],
     )
     opps.ingest_opportunities(filtered_job_opps)
 
@@ -264,9 +276,10 @@ async def main():
         request_linkedin_internship24_data(),
         request_github_internship24_data(),
     )
+
     filtered_internship_opps = utils.gpt_job_analyze(
         internship_opps,
-        PROMPTS[OpportunityType.INTERNSHIP],
+        prompt_object["internship"],
     )
     opps.ingest_opportunities(filtered_internship_opps)
 
@@ -281,8 +294,12 @@ async def main():
     internship_data_results = opps.list_opportunities(True, "internship", filtered=True)
     job_data_results = opps.list_opportunities(True, "full_time", filtered=True)
 
-    internship_formatted_message = opps.format_opportunities(internship_data_results)
-    job_formatted_message = opps.format_opportunities(job_data_results)
+    internship_formatted_message = opps.format_opportunities(
+        internship_data_results, finalized_message
+    )
+    job_formatted_message = opps.format_opportunities(
+        job_data_results, finalized_message
+    )
 
     discord_webhook = os.getenv("DISCORD_WEBHOOK")
 

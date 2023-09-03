@@ -1,5 +1,4 @@
 from datetime import date, datetime
-import psycopg2
 import requests
 from typing import List
 import os
@@ -8,7 +7,7 @@ from time import sleep
 import json
 import google.generativeai as palm
 from bs4 import BeautifulSoup
-from opportunity import Opportunity
+from opportunity import Opportunity, OpportunityType
 
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
@@ -22,7 +21,10 @@ def extract_command_value():
 
     # Add an argument (the custom command) along with the help functionality to see what the command does
     parser.add_argument(
-        "--days-needed", type=str, help="The number of days needed to fetch jobs."
+        "--days-needed",
+        type=str,
+        nargs=1,
+        help="The amount of days to extract jobs.",
     )
 
     parser.add_argument(
@@ -32,15 +34,7 @@ def extract_command_value():
     # Parse the argument and insert into a variable
     arguments = parser.parse_args()
 
-    # Return the value from the --days-needed custom command
     return arguments
-
-
-def instantiate_db_connection():
-    """Returns the connection from the DB"""
-
-    db_uri = os.getenv("DB_URI")
-    return psycopg2.connect(db_uri)
 
 
 def calculate_day_difference(elem: datetime) -> int:
@@ -76,7 +70,7 @@ def blueprint_opportunity_formatter(
     """Helper function which serves as a data extraction blueprint for specific formatting"""
 
     div = content.find_all("div", class_=div_elem)
-    days_needed_command_value = extract_command_value().days_needed
+    days_needed_command_value = extract_command_value().days_needed[0]
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
@@ -112,6 +106,7 @@ def content_parser(url) -> BeautifulSoup:
 
 def merge_all_opportunity_data(*args) -> List[Opportunity]:
     """Merges all the opportunities into one large List[Opportunity]"""
+
     merged_opp_list = []
 
     for arg in args:
@@ -120,31 +115,47 @@ def merge_all_opportunity_data(*args) -> List[Opportunity]:
     return merged_opp_list
 
 
-def add_column(column_name, default) -> None:
-    """Adds a column for adjustment to the table after the table has been created"""
-    with instantiate_db_connection() as connection:
-        cursor = connection.cursor()
+def user_customization(file_paths: List[str]) -> dict:
+    """Returns users customization for both message and prompt"""
 
-        cursor.execute(
-            f"ALTER TABLE jobs_table ADD COLUMN {column_name} VARCHAR(255) DEFAULT '{default}'"
-        )
+    data = []
 
-        connection.commit()
+    for file_path in file_paths:
+        try:
+            with open(file_path, "r") as file:
+                text = file.read()
+                data.append(text)
+        except OSError:
+            print(f"Unable to open/read file path: '{file_path}'")
+
+    return {"customized_message": data[0], "customized_prompts": data[1]}
 
 
-def delete_alL_opportunity_type(opp_type: str) -> None:
-    """Deletes all opportunities of a specific type for testing purposes only"""
-    with instantiate_db_connection() as connection:
-        cursor = connection.cursor()
+def determine_prompts(customized_prompts: dict) -> object:
+    """Determines the final PaLM prompt"""
 
-        cursor.execute("DELETE FROM jobs_table WHERE type = %s", (opp_type,))
-        connection.commit()
+    final_prompt_object = {}
+    prompts = json.loads(customized_prompts)[0]
+
+    final_prompt_object["full_time"] = prompts["OpportunityType.FULL_TIME"]
+    final_prompt_object["internship"] = prompts["OpportunityType.INTERNSHIP"]
+
+    return final_prompt_object
+
+
+def determine_customized_message(message: dict) -> str:
+    """Determines the customized text for the webhook"""
+    default = "[**{company}**]({link}): {title} `@{location}`!"
+
+    file_message = json.loads(message)[0]
+
+    return file_message["Message"] if file_message["Message"] else default
 
 
 # ----------------- PALM API -----------------
 
 
-MAX_RETRY = 5  # Max number of retrys for the gpt_job_analyzer() function
+MAX_RETRY = 5  # Max number of retrys
 palm.configure(api_key=os.getenv("PALM_API_KEY"))
 
 
@@ -164,11 +175,22 @@ def current_model_inuse() -> any:
 
 def parse_gpt_values(gpt_response) -> List[bool]:
     """Helper function to parse the gpt response from a str -> List[bool]"""
-    return json.loads(gpt_response.lower())
+
+    response: List[bool]
+
+    for _ in range(MAX_RETRY):
+        try:
+            response = json.loads(gpt_response.lower())
+            break
+        except AttributeError:
+            sleep(0.5)
+
+    return response
 
 
 def filter_out_opportunities(list_of_opps, gpt_response) -> List[Opportunity]:
     """Helper function for gpt_job_analyzer() to filter the data"""
+
     structured_opps = [
         opp for opp, response in zip(list_of_opps, gpt_response) if response
     ]

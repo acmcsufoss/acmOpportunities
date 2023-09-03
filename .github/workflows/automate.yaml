@@ -37,11 +37,11 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run script
-        run: python main.py --days-needed 2 # Custom CLI Command
+        run: python main.py --days-needed 2
+        # Custom CLI Command
+# fmt: off    
 #LINT.IF .env.example
         env:
-          RAPID_API_KEY: ${{ secrets.RAPID_API_KEY}}
-          RAPID_API_URL: ${{ secrets.RAPID_API_URL}}
           LINKEDIN_URL: ${{ secrets.LINKEDIN_URL}}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK}}
           DB_URI: ${{ secrets.DB_URI}}
@@ -49,4 +49,7 @@ jobs:
           PALM_API_KEY: ${{ secrets.PALM_API_KEY}}
           LINKEDIN_INTERN_URL: ${{ secrets.LINKEDIN_INTERN_URL}}
           GH_INTERN24_URL: ${{ secrets.GH_INTERN24_URL}}
+          PROMPTS_PATH: ${{ secrets.PROMPTS_PATH}}
+          MESSAGE_PATH: ${{ secrets.MESSAGE_PATH}}
 #LINT.END
+# fmt: on  
