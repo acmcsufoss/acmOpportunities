@@ -4,14 +4,14 @@ The acmOpportunities Discord Bot is a tool designed for students in our club. Th
 
 ## Key features
 
-- **Stay informed**: Filtered by AI, acmOpportunities keeps up-to-date with the latest SWE job opportunities near Fullerton, CA without having to manually search for them. Sends in up to 20 job opportunities every other day.
-- **Seamless integration**: With the integration of PostgreSQL and Discord, acmOpportunities provides a seamless user experience. The bot retrieves job details from the database and delivers them as rich embeds on Discord, ensuring easy access and engagement.
+- **Stay informed**: Filtered by AI, acmOpportunities keeps up-to-date with the latest SWE job opportunities near Fullerton, CA without having to manually search for them.
+- **Seamless integration**: With the integration of PostgreSQL and Discord, acmOpportunities provides a seamless user experience.
 
 ## Usage
 
 1. Install [Python](https://www.python.org/downloads/).
 2. Pip install the dependencies of main.py using `pip install -r requirements.txt`.
-3. Set the required environment variables.
+3. Set the required environment variables located in `.env.example`.
 4. To create the table, write `python ./main --create` once.
 5. To run the program manually, write `python ./main.py --days-needed 2`.
 
