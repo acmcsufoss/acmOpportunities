@@ -27,7 +27,7 @@ def create():
         cursor = connection.cursor()
 
         cursor.execute(
-            f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME}(company TEXT, title TEXT, location TEXT, link TEXT, processed INTEGER DEFAULT 0)"""
+            f"""CREATE TABLE IF NOT EXISTS {TABLE_NAME}(company TEXT, title TEXT, location TEXT, link TEXT, processed INTEGER DEFAULT 0, type TEXT)"""
         )
 
         connection.commit()
@@ -273,8 +273,7 @@ async def main():
 
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
     internship_opps = utils.merge_all_opportunity_data(
-        request_linkedin_internship24_data(),
-        request_github_internship24_data(),
+        request_linkedin_internship24_data()
     )
 
     filtered_internship_opps = utils.gpt_job_analyze(
