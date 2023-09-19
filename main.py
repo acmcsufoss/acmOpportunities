@@ -10,6 +10,7 @@ import db
 import opportunity as opps
 from opportunity import Opportunity, OpportunityType
 from dotenv import load_dotenv
+from blacklist import BlackList
 
 load_dotenv()  # To obtain keys from the .env file
 
@@ -17,7 +18,7 @@ load_dotenv()  # To obtain keys from the .env file
 # ----------------- POSTGRES -----------------
 
 TABLE_NAME = os.getenv("DB_TABLE")
-MAX_LIST_LENGTH = 13
+MAX_LIST_LENGTH = 15
 
 
 def create():
@@ -49,19 +50,20 @@ def request_github_internship24_data() -> List[Opportunity]:
             elements = cell.find_all("td")
 
             company = elements[0].text
-            title = elements[1].text
-            location = elements[2].text
-            link = elements[3]
-            if "🔒" not in link.text:
-                opportunity = Opportunity(
-                    company,
-                    title,
-                    location,
-                    link.find("a")["href"],
-                    0,
-                    OpportunityType.INTERNSHIP.value,
-                )
-                github_list.append(opportunity)
+            if not BlackList().is_blacklisted_company(company):
+                title = elements[1].text
+                location = elements[2].text
+                link = elements[3]
+                if "🔒" not in link.text:
+                    opportunity = Opportunity(
+                        company,
+                        title,
+                        location,
+                        link.find("a")["href"],
+                        0,
+                        OpportunityType.INTERNSHIP.value,
+                    )
+                    github_list.append(opportunity)
 
     return github_list
 
