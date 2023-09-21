@@ -8,7 +8,7 @@ import json
 import google.generativeai as palm
 from bs4 import BeautifulSoup
 from opportunity import Opportunity
-from blocklist import Blockist
+from blocklist import BlockList
 
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
@@ -75,7 +75,7 @@ def blueprint_opportunity_formatter(
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
-        if not Blockist().is_blacklisted_company(company):
+        if not BlockList().is_blacklisted_company(company):
             title = elem.find(class_=title_elem).text.strip()
             location = elem.find(class_=location_elem).text.strip()
             link = elem.find(class_=link_elem)["href"].split("?")[0]

@@ -10,7 +10,7 @@ import db
 import opportunity as opps
 from opportunity import Opportunity, OpportunityType
 from dotenv import load_dotenv
-from blocklist import Blocklist
+from blocklist import BlockList
 
 load_dotenv()  # To obtain keys from the .env file
 
@@ -50,7 +50,7 @@ def request_github_internship24_data() -> List[Opportunity]:
             elements = cell.find_all("td")
 
             company = elements[0].text
-            if not Blocklist().is_blacklisted_company(company):
+            if not BlockList().is_blacklisted_company(company):
                 title = elements[1].text
                 location = elements[2].text
                 link = elements[3]

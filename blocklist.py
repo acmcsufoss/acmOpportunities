@@ -1,4 +1,4 @@
-class Blockist:
+class BlockList:
     """A class holding methods to determine if a company is blocklisted"""
 
     BLOCKLISTED_COMPANIES = set(
