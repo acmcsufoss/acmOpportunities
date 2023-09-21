@@ -7,7 +7,8 @@ from time import sleep
 import json
 import google.generativeai as palm
 from bs4 import BeautifulSoup
-from opportunity import Opportunity, OpportunityType
+from opportunity import Opportunity
+from blacklist import BlackList
 
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
@@ -74,23 +75,25 @@ def blueprint_opportunity_formatter(
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
-        title = elem.find(class_=title_elem).text.strip()
-        location = elem.find(class_=location_elem).text.strip()
-        link = elem.find(class_=link_elem)["href"].split("?")[0]
-        processed = 0
+        if not BlackList().is_blacklisted_company(company):
+            title = elem.find(class_=title_elem).text.strip()
+            location = elem.find(class_=location_elem).text.strip()
+            link = elem.find(class_=link_elem)["href"].split("?")[0]
+            processed = 0
 
-        date_difference = calculate_day_difference(elem)
-        if len(internship_list) < len_of_jobs:
-            if date_limit and int(days_needed_command_value) >= date_difference:
-                opportunity = Opportunity(
-                    company, title, location, link, processed, opp_type
-                )
-            else:
-                opportunity = Opportunity(
-                    company, title, location, link, processed, opp_type
-                )
+            date_difference = calculate_day_difference(elem)
 
-            internship_list.append(opportunity)
+            if len(internship_list) < len_of_jobs:
+                if date_limit and int(days_needed_command_value) >= date_difference:
+                    opportunity = Opportunity(
+                        company, title, location, link, processed, opp_type
+                    )
+                else:
+                    opportunity = Opportunity(
+                        company, title, location, link, processed, opp_type
+                    )
+
+                internship_list.append(opportunity)
 
     return internship_list
 
