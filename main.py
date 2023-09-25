@@ -7,7 +7,7 @@ from utility import utils
 import utility.db as db
 import utility.opportunity as opps
 from dotenv import load_dotenv
-from utility.scrap import (
+from utility.scrape import (
     request_github_internship24_data,
     request_linkedin_data,
     request_linkedin_internship24_data,
