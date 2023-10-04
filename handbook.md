@@ -105,3 +105,18 @@ After you've set yours up, please copy paste the URL into the `DB_URI`.
 
 ## Step 3 - Install Dependencies
 Pip install the dependencies of main.py using `pip install -r requirements.txt`.
+
+## Step 4 - Create Table in your Database
+To create the table, write `python ./main --create` **once** in the terminal.
+![Alt text](image-9.png)
+
+If you go back to your database and click **Browser** and **Table Queries** you should see your newly made table.
+![Alt text](image-11.png)
+
+## Step 5 - Final Steps
+Congratulations! The discord bot will now send in opportunities **every other day**.
+
+**If you would like to test ir right now and run the program manually, write `python ./main.py --days-needed 2` in the terminal.**
+
+
+
