@@ -42,14 +42,16 @@ def request_github_internship24_data() -> List[Opportunity]:
 
     url = os.getenv("GH_INTERN24_URL")
     parse_content = utils.content_parser(url)
-    github_list = []
     td_elems = parse_content.find_all("tr")
+
+    github_list: List[Opportunity] = []
 
     for cell in td_elems[1:]:
         if len(github_list) <= MAX_LIST_LENGTH:
             elements = cell.find_all("td")
 
-            company = elements[0].text
+            company = elements[0].text if elements[0].text else github_list[-1].company
+
             if not BlockList().is_blacklisted_company(company):
                 title = elements[1].text
                 location = elements[2].text
@@ -313,5 +315,5 @@ async def main():
     opps.update_opportunities_status(internship_data_results)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# if __name__ == "__main__":
+#     asyncio.run(main())
