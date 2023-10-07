@@ -1,6 +1,6 @@
 from utility.opportunity import Opportunity, OpportunityType
 from typing import List
-import utils
+import utility.utils as utils
 import os
 from dotenv import load_dotenv
 import re

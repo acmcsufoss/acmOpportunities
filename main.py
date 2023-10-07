@@ -3,7 +3,7 @@ import os
 import json
 import asyncio
 from datetime import date
-from utility import utils
+import utility.utils as ut
 import utility.db as db
 import utility.opportunity as opps
 from dotenv import load_dotenv
@@ -17,7 +17,7 @@ from utility.palm import gpt_job_analyze
 
 # Load and determine if all env variables are set
 load_dotenv()
-utils.verify_set_env_variables()
+ut.verify_set_env_variables()
 
 
 async def execute_opportunities_webhook(webhook_url, job_message, internship_message):
@@ -73,7 +73,7 @@ async def execute_opportunities_webhook(webhook_url, job_message, internship_mes
 
 async def main():
     # Creates table in database
-    with_create_table_command = utils.extract_command_value().create
+    with_create_table_command = ut.extract_command_value().create
     if with_create_table_command:
         TABLE_NAME = os.getenv("DB_TABLE")
 
@@ -83,18 +83,18 @@ async def main():
         exit()  # Exit the main function to avoid calling other functions
 
     file_paths = [os.getenv("MESSAGE_PATH"), os.getenv("PROMPTS_PATH")]
-    customized_object = utils.user_customization(file_paths)
+    customized_object = ut.user_customization(file_paths)
 
     # Determines the customized prompts for PaLM
-    prompt_object = utils.determine_prompts(customized_object["customized_prompts"])
+    prompt_object = ut.determine_prompts(customized_object["customized_prompts"])
 
     # Determines the customized message for the webhook
-    finalized_message = utils.determine_customized_message(
+    finalized_message = ut.determine_customized_message(
         customized_object["customized_message"]
     )
 
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
-    job_opps = utils.merge_all_opportunity_data(request_linkedin_data())
+    job_opps = ut.merge_all_opportunity_data(request_linkedin_data())
 
     filtered_job_opps = gpt_job_analyze(
         job_opps,
@@ -103,7 +103,7 @@ async def main():
     opps.ingest_opportunities(filtered_job_opps)
 
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
-    internship_opps = utils.merge_all_opportunity_data(
+    internship_opps = ut.merge_all_opportunity_data(
         request_linkedin_internship24_data(),
         request_github_internship24_data(),
     )
@@ -138,9 +138,9 @@ async def main():
         discord_webhook, job_formatted_message, internship_formatted_message
     )
 
-    opps.update_opportunities_status(job_data_results)
-    opps.update_opportunities_status(internship_data_results)
+    # opps.update_opportunities_status(job_data_results)
+    # opps.update_opportunities_status(internship_data_results)
 
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

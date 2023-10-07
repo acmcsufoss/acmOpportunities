@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from dotenv import load_dotenv
 from typing import List
-import db
+import utility.db as db
 from enum import Enum
 import os
 

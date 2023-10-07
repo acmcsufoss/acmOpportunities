@@ -1,11 +1,11 @@
 import google.generativeai as palm
 from time import sleep
 import os
-import utils
+import utility.utils as utils
 from dotenv import load_dotenv
 from typing import List
 import json
-from opportunity import Opportunity
+from utility.opportunity import Opportunity
 
 load_dotenv()
 utils.verify_set_env_variables()

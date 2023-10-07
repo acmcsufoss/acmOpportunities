@@ -5,8 +5,8 @@ import os
 import argparse
 import json
 from bs4 import BeautifulSoup
-from opportunity import Opportunity
-from blocklist import BlockList
+from utility.opportunity import Opportunity
+from utility.blocklist import BlockList
 
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
