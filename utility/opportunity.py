@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from dotenv import load_dotenv
 from typing import List
-import db
+import utility.db as db
 from enum import Enum
 import os
 
@@ -32,7 +32,7 @@ class Opportunity:
 table_name = os.getenv("DB_TABLE")
 
 
-def ingest_opportunities(job_data):
+def ingest_opportunities(job_data: List[Opportunity]) -> None:
     """Inserts opportunities if and only if they do not already exist"""
     with db.instantiate_db_connection() as connection:
         cursor = connection.cursor()
