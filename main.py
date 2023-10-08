@@ -20,7 +20,9 @@ load_dotenv()
 ut.verify_set_env_variables()
 
 
-async def execute_opportunities_webhook(webhook_url, job_message, internship_message):
+async def execute_opportunities_webhook(
+    webhook_url: str, job_message: str, internship_message: str
+):
     """
     Executes the message which receives the formatted message
     from the format_opportunities() function as well as the webhook
@@ -138,8 +140,8 @@ async def main():
         discord_webhook, job_formatted_message, internship_formatted_message
     )
 
-    # opps.update_opportunities_status(job_data_results)
-    # opps.update_opportunities_status(internship_data_results)
+    opps.update_opportunities_status(job_data_results)
+    opps.update_opportunities_status(internship_data_results)
 
 
 if __name__ == "__main__":

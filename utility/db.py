@@ -9,7 +9,7 @@ def instantiate_db_connection():
     return psycopg2.connect(db_uri)
 
 
-def create(TABLE_NAME: str):
+def create(TABLE_NAME: str) -> None:
     """Creates the DB. Only needs to be called once."""
 
     with instantiate_db_connection() as connection:
@@ -43,7 +43,7 @@ def delete_all_opportunity_type(opp_type: str) -> None:
         connection.commit()
 
 
-def reset_processed_status(TABLE_NAME):
+def reset_processed_status(TABLE_NAME: str) -> None:
     """Jobs status will be set to _processed = 0 for testing a debugging purposes"""
 
     with instantiate_db_connection() as connection:

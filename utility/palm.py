@@ -29,7 +29,7 @@ def current_model_inuse() -> any:
     return model
 
 
-def parse_gpt_values(gpt_response) -> List[bool]:
+def parse_gpt_values(gpt_response: str) -> List[bool]:
     """Helper function to parse the gpt response from a str -> List[bool]"""
 
     response: List[bool]
@@ -44,18 +44,22 @@ def parse_gpt_values(gpt_response) -> List[bool]:
     return response
 
 
-def filter_out_opportunities(list_of_opps, gpt_response) -> List[Opportunity]:
+def filter_out_opportunities(
+    list_of_opps: List[Opportunity], gpt_response: List[bool]
+) -> List[Opportunity]:
     """Helper function for gpt_job_analyzer() to filter the data"""
 
     structured_opps = [
         opp for opp, response in zip(list_of_opps, gpt_response) if response
     ]
 
-    print(f"Length after GPT analyzed the jobs: {len(structured_opps)}")
+    print(
+        f"Length after GPT analyzed the {list_of_opps[0].type}: {len(structured_opps)}"
+    )
     return structured_opps
 
 
-def get_parsed_values(prompt) -> List[bool]:
+def get_parsed_values(prompt: str) -> List[bool]:
     """Function which returns parsed values if the opportunity mathces with the clubs values"""
 
     defaults = {
@@ -85,7 +89,9 @@ def get_parsed_values(prompt) -> List[bool]:
 def gpt_job_analyze(list_of_opps: List[Opportunity], prompt: str) -> List[Opportunity]:
     """Analyzes each job opportunity before being inserted into the DB"""
 
-    print(f"The jobs original length before filtering: {len(list_of_opps)}")
+    print(
+        f"The type '{list_of_opps[0].type}' original length before filtering: {len(list_of_opps)}"
+    )
 
     for opp in list_of_opps:
         prompt += f"\nCompany: {opp.company}"
@@ -103,8 +109,7 @@ def gpt_job_analyze(list_of_opps: List[Opportunity], prompt: str) -> List[Opport
         ):  # The type of error that would be received is type JSON
             sleep(0.5)
 
-    print(f" Below are the parsed values from GPT\n {parsed_values}")
-    print(parsed_values)  # For debugging purposes
+    print(f" Below are the parsed values from GPT - {parsed_values}")
 
     return filter_out_opportunities(
         list_of_opps, parsed_values

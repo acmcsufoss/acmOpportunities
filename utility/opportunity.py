@@ -32,7 +32,7 @@ class Opportunity:
 table_name = os.getenv("DB_TABLE")
 
 
-def ingest_opportunities(job_data):
+def ingest_opportunities(job_data: List[Opportunity]) -> None:
     """Inserts opportunities if and only if they do not already exist"""
     with db.instantiate_db_connection() as connection:
         cursor = connection.cursor()
