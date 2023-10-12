@@ -23,7 +23,6 @@ ut.verify_set_env_variables()
 async def execute_opportunities_webhook(
     webhook_url: str, job_message: str, internship_message: str
 ):
-
     """
     Executes the message which receives the formatted message
     from the format_opportunities() function as well as the webhook
@@ -106,9 +105,8 @@ async def main():
     opps.ingest_opportunities(filtered_job_opps)
 
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
-    internship_opps = utils.merge_all_opportunity_data(
-        request_linkedin_internship24_data()
-
+    internship_opps = ut.merge_all_opportunity_data(
+        request_linkedin_internship24_data(), request_github_internship24_data()
     )
 
     filtered_internship_opps = gpt_job_analyze(
