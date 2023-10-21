@@ -32,7 +32,7 @@ def current_model_inuse() -> any:
 def parse_gpt_values(gpt_response: str) -> List[bool]:
     """Helper function to parse the gpt response from a str -> List[bool]"""
 
-    response: List[bool]
+    response: List[bool] = []
 
     for _ in range(MAX_RETRY):
         try:
