@@ -1,4 +1,6 @@
-# acmOpportunities
+# [❗UNDER CONSTRUCTION❗] acmOpportunities
+
+## acmOpportunities is currently under construction for V.2. due to recent unfortunate [ElephantSQL changes](https://www.elephantsql.com/blog/end-of-life-announcement.html).
 
 The acmOpportunities Discord Bot is a tool designed for students in our club. This bot keeps developers informed about the latest job opportunities in the industry by sending job listings directly to the ACM Discord server.
 
