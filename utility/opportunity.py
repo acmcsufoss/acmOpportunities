@@ -34,34 +34,29 @@ table_name = os.getenv("DB_TABLE")
 
 def ingest_opportunities(job_data: List[Opportunity]) -> None:
     """Inserts opportunities if and only if they do not already exist"""
-    with db.instantiate_db_connection() as connection:
-        cursor = connection.cursor()
-
-        for job in job_data:
-            cursor.execute(
-                f"SELECT * FROM {table_name} WHERE company = %(company)s AND title = %(title)s AND location = %(location)s AND type = %(type)s",
+    supabase = db.create_supabase_client()
+    for job in job_data:
+        response = (
+            supabase.table(table_name)
+            .select("company, title, location, type")
+            .eq(
                 {
                     "company": job.company,
                     "title": job.title,
                     "location": job.location,
                     "type": job.type,
-                },
+                }
             )
-            row = cursor.fetchone()
-
-            if row is None:
-                cursor.execute(
-                    f"INSERT INTO {table_name} (company, title, location, link, processed, type) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (
-                        job.company,
-                        job.title,
-                        job.location,
-                        job.link,
-                        job.processed,
-                        job.type,
-                    ),
-                )
-        connection.commit()
+        )
+        if not response.data:
+            response = supabase.table(table_name).insert(
+                {
+                    "company": job.company,
+                    "title": job.title,
+                    "location": job.location,
+                    "type": job.type,
+                }
+            )
 
 
 def list_opportunities(
