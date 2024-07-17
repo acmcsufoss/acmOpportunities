@@ -42,10 +42,11 @@ jobs:
 # fmt: off    
 #LINT.IF .env.example
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DB_TABLE: ${{ secrets.DB_TABLE}}
           LINKEDIN_URL: ${{ secrets.LINKEDIN_URL}}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK}}
-          DB_URI: ${{ secrets.DB_URI}}
-          DB_TABLE: ${{ secrets.DB_TABLE}}
           PALM_API_KEY: ${{ secrets.PALM_API_KEY}}
           LINKEDIN_INTERN_URL: ${{ secrets.LINKEDIN_INTERN_URL}}
           GH_INTERN24_URL: ${{ secrets.GH_INTERN24_URL}}

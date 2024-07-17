@@ -40,10 +40,11 @@ def verify_set_env_variables() -> any:
     """Determines if the env variables are all set properly"""
 
     env_variables = [
+        "SUPABASE_URL",
+        "SUPABASE_KEY",
+        "DB_TABLE",
         "LINKEDIN_URL",
         "DISCORD_WEBHOOK",
-        "DB_URI",
-        "DB_TABLE",
         "PALM_API_KEY",
         "GH_INTERN24_URL",
         "LINKEDIN_INTERN_URL",

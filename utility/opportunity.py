@@ -34,6 +34,7 @@ table_name = os.getenv("DB_TABLE")
 
 def ingest_opportunities(job_data: List[Opportunity]) -> None:
     """Inserts opportunities if and only if they do not already exist"""
+
     supabase = db.create_supabase_client()
     for job in job_data:
         response = (
@@ -47,15 +48,20 @@ def ingest_opportunities(job_data: List[Opportunity]) -> None:
                     "type": job.type,
                 }
             )
+            .execute()
         )
         if not response.data:
-            response = supabase.table(table_name).insert(
-                {
-                    "company": job.company,
-                    "title": job.title,
-                    "location": job.location,
-                    "type": job.type,
-                }
+            response = (
+                supabase.table(table_name)
+                .insert(
+                    {
+                        "company": job.company,
+                        "title": job.title,
+                        "location": job.location,
+                        "type": job.type,
+                    }
+                )
+                .execute()
             )
 
 
@@ -66,19 +72,18 @@ def list_opportunities(
 ) -> List[Opportunity]:
     """Lists all oppportunities in DB as well as returns them"""
 
-    with db.instantiate_db_connection() as connection:
-        cursor = connection.cursor()
-
-        if filtered:
-            cursor.execute(
-                f"SELECT * FROM {table_name} WHERE processed = 0 AND type = '{opp_type}' LIMIT 15"
-            )
-        else:
-            cursor.execute(f"SELECT * FROM {table_name}")
-
-        rows = cursor.fetchall()
-
-        return read_all_opportunities(rows, debug)
+    supabase = db.create_supabase_client()
+    if filtered:
+        response = (
+            supabase.table(table_name)
+            .select("*")
+            .match({"processed": 0, "type": opp_type})
+            .limit(15)
+            .execute()
+        )
+    else:
+        response = supabase.table(table_name).select("*")
+    return read_all_opportunities(response.data, debug)
 
 
 def read_all_opportunities(rows, debug_tool: bool) -> List[Opportunity]:
@@ -107,24 +112,18 @@ def read_all_opportunities(rows, debug_tool: bool) -> List[Opportunity]:
 def update_opportunities_status(data_results: List[Opportunity]) -> None:
     """Updates the status of the jobs to processed = 1 after it's been sent by the discord bot"""
 
-    with db.instantiate_db_connection() as connection:
-        cursor = connection.cursor()
-
-        for data_block in data_results:
-            cursor.execute(
-                f"UPDATE {table_name} SET processed = %s WHERE company = %s AND title = %s AND location = %s",
-                (
-                    1,
-                    data_block.company,
-                    data_block.title,
-                    data_block.location,
-                ),
-            )
-
-        connection.commit()
+    supabase = db.create_supabase_client()
+    for data_block in data_results:
+        supabase.table(table_name).update({"processed": 1}).match(
+            {
+                "company": data_block.company,
+                "title": data_block.title,
+                "location": data_block.location,
+            }
+        ).execute()
 
 
-def format_opportunities(data_results: str, formatted_text: str) -> str:
+def format_opportunities(data_results: List[Opportunity], formatted_text: str) -> str:
     """Receives data from list_filtered_opporunities() and returns a single string message"""
 
     formatted_string = ""
