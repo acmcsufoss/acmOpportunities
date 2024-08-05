@@ -103,6 +103,9 @@ def gpt_job_analyze(list_of_opps: List[Opportunity], prompt: str) -> List[Opport
     for _ in range(MAX_RETRY):  # Keep looping until a valid prompt is received
         try:
             parsed_values = get_parsed_values(prompt)
+
+            if len(parsed_values) == 0:
+                continue
             break
         except (
             json.decoder.JSONDecodeError
