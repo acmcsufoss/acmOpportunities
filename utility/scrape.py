@@ -131,20 +131,21 @@ def request_linkedin_data() -> List[Opportunity]:
     MAX_RETRY = 5
 
     for _ in range(MAX_RETRY):
-        try:
-            linked_in_jobs = utils.blueprint_opportunity_formatter(
-                parse_content,
-                "base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
-                "hidden-nested-link",
-                "base-search-card__title",
-                "job-search-card__location",
-                "base-card__full-link",
-                True,
-                MAX_OPPORTUNITY_LIST_LENGTH,
-                OpportunityType.FULL_TIME.value,
-            )
+        linked_in_jobs = utils.blueprint_opportunity_formatter(
+            parse_content,
+            "base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
+            "hidden-nested-link",
+            "base-search-card__title",
+            "job-search-card__location",
+            "base-card__full-link",
+            True,
+            MAX_OPPORTUNITY_LIST_LENGTH,
+            OpportunityType.FULL_TIME.value,
+        )
+
+        if linked_in_jobs:
             break
-        except ValueError:
-            sleep(0.5)
+
+        sleep(0.5)
 
     return linked_in_jobs

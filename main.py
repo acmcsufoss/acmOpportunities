@@ -145,8 +145,8 @@ async def main():
         discord_webhook, job_formatted_message, internship_formatted_message
     )
 
-    opps.update_opportunities_status(job_data_results)
-    opps.update_opportunities_status(internship_data_results)
+    # opps.update_opportunities_status(job_data_results)
+    # opps.update_opportunities_status(internship_data_results)
 
 
 if __name__ == "__main__":
