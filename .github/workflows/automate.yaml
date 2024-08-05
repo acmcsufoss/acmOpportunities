@@ -44,7 +44,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          DB_TABLE: ${{ secrets.DB_TABLE}}
+          DB_TABLE_NAME: ${{ secrets.DB_TABLE_NAME}}
           LINKEDIN_URL: ${{ secrets.LINKEDIN_URL}}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK}}
           PALM_API_KEY: ${{ secrets.PALM_API_KEY}}
