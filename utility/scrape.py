@@ -11,7 +11,7 @@ from time import sleep
 load_dotenv()
 utils.verify_set_env_variables()
 
-MAX_OPPORTUNITY_LIST_LENGTH = 15
+MAX_OPPORTUNITY_LIST_LENGTH = 10
 
 # ----------------- INTERNSHIP DATA -----------------
 
