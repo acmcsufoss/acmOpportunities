@@ -13,6 +13,7 @@ from utility.scrape import (
     request_linkedin_internship24_data,
 )
 from utility.palm import gpt_job_analyze
+from utility.error import ErrorMsg
 
 
 # Load and determine if all env variables are set
@@ -70,7 +71,9 @@ async def execute_opportunities_webhook(
     if response.status_code == 204:
         print("Webhook message was sent sucessfully!")
     else:
-        print(f"Failed to send webhook message. Status Code: {response.status_code}")
+        print(
+            f"Failed to send webhook message. {ErrorMsg().status_code_failure(response.status_code)}"
+        )
 
 
 async def main():
@@ -102,6 +105,7 @@ async def main():
         job_opps,
         prompt_object["full_time"],
     )
+
     opps.ingest_opportunities(filtered_job_opps)
 
     # Consolidates all job-related opportunities into a comprehensive List[Opportunity], eliminating repetitive calls to the LLM SERVER.
@@ -123,7 +127,9 @@ async def main():
 
     # db.reset_processed_status()
 
-    internship_data_results = opps.list_opportunities(True, "internship", filtered=True)
+    internship_data_results = opps.list_opportunities(
+        False, "internship", filtered=True
+    )
     job_data_results = opps.list_opportunities(True, "full_time", filtered=True)
 
     internship_formatted_message = opps.format_opportunities(

@@ -3,10 +3,12 @@ import requests
 from typing import List
 import os
 import argparse
+import uuid
 import json
 from bs4 import BeautifulSoup
 from utility.opportunity import Opportunity
 from utility.blocklist import BlockList
+from utility.error import ErrorMsg
 
 # ----------------- FOR CLI LIBRARY COMMAND -----------------
 
@@ -42,7 +44,7 @@ def verify_set_env_variables() -> any:
     env_variables = [
         "SUPABASE_URL",
         "SUPABASE_KEY",
-        "DB_TABLE",
+        "DB_TABLE_NAME",
         "LINKEDIN_URL",
         "DISCORD_WEBHOOK",
         "PALM_API_KEY",
@@ -77,6 +79,12 @@ def calculate_day_difference(elem: datetime) -> int:
     return day_difference
 
 
+from typing import List
+from datetime import datetime
+import re
+import random
+
+
 def blueprint_opportunity_formatter(
     content,  # Parsed content
     div_elem,  # Class to traverse job elements
@@ -92,6 +100,13 @@ def blueprint_opportunity_formatter(
 
     div = content.find_all("div", class_=div_elem)
     days_needed_command_value = extract_command_value().days_needed[0]
+
+    # Validate and clean days_needed_command_value
+    try:
+        days_needed = int(re.sub(r"\D", "", days_needed_command_value))
+    except ValueError:
+        days_needed = 0  # Default to 0 or handle as needed
+
     internship_list = []
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
@@ -99,18 +114,34 @@ def blueprint_opportunity_formatter(
             title = elem.find(class_=title_elem).text.strip()
             location = elem.find(class_=location_elem).text.strip()
             link = elem.find(class_=link_elem)["href"].split("?")[0]
-            processed = 0
+            processed = False
 
-            date_difference = calculate_day_difference(elem)
+            try:
+                date_difference = calculate_day_difference(elem)
+            except Exception as e:
+                ErrorMsg().date_difference_failure(e)
+                continue  # Skip this element if there's an issue
 
             if len(internship_list) < len_of_jobs:
-                if date_limit and int(days_needed_command_value) >= date_difference:
+                if date_limit and days_needed >= date_difference:
                     opportunity = Opportunity(
-                        company, title, location, link, processed, opp_type
+                        id=str(uuid.uuid4()),
+                        company=company,
+                        title=title,
+                        location=location,
+                        link=link,
+                        processed=processed,
+                        type_of_opportunity=opp_type,
                     )
                 else:
                     opportunity = Opportunity(
-                        company, title, location, link, processed, opp_type
+                        id=str(uuid.uuid4()),
+                        company=company,
+                        title=title,
+                        location=location,
+                        link=link,
+                        processed=processed,
+                        type_of_opportunity=opp_type,
                     )
 
                 internship_list.append(opportunity)
@@ -149,7 +180,7 @@ def user_customization(file_paths: List[str]) -> dict:
                 text = file.read()
                 data.append(text)
         except OSError:
-            print(f"Unable to open/read file path: '{file_path}'")
+            ErrorMsg().file_open_failure(file_path)
 
     return {"customized_message": data[0], "customized_prompts": data[1]}
 

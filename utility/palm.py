@@ -54,7 +54,7 @@ def filter_out_opportunities(
     ]
 
     print(
-        f"Length after GPT analyzed the {list_of_opps[0].type}: {len(structured_opps)}"
+        f"Length after GPT analyzed the {list_of_opps[0].type_of_opportunity}: {len(structured_opps)}"
     )
     return structured_opps
 
@@ -90,7 +90,7 @@ def gpt_job_analyze(list_of_opps: List[Opportunity], prompt: str) -> List[Opport
     """Analyzes each job opportunity before being inserted into the DB"""
 
     print(
-        f"The type '{list_of_opps[0].type}' original length before filtering: {len(list_of_opps)}"
+        f"The type '{list_of_opps[0].type_of_opportunity}' original length before filtering: {len(list_of_opps)}"
     )
 
     for opp in list_of_opps:
