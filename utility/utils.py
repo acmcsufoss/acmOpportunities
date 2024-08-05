@@ -108,6 +108,7 @@ def blueprint_opportunity_formatter(
         days_needed = 0  # Default to 0 or handle as needed
 
     internship_list = []
+
     for elem in div:
         company = elem.find(class_=company_elem).text.strip()
         if not BlockList().is_blacklisted_company(company):
