@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from typing import List
 import utility.db as db
 from enum import Enum
+import uuid
+from datetime import datetime
 import os
 
 load_dotenv()
@@ -21,47 +23,49 @@ class OpportunityType(Enum):
 class Opportunity:
     """Struct to hold data for an opportunity"""
 
+    id: any
     company: str
     title: str
     location: str
     link: str
     processed: bool
-    type: OpportunityType
+    type_of_opportunity: OpportunityType
 
 
-table_name = os.getenv("DB_TABLE")
+TABLE_NAME = os.getenv("DB_TABLE_NAME")
 
 
 def ingest_opportunities(job_data: List[Opportunity]) -> None:
     """Inserts opportunities if and only if they do not already exist"""
-    with db.instantiate_db_connection() as connection:
-        cursor = connection.cursor()
 
-        for job in job_data:
-            cursor.execute(
-                f"SELECT * FROM {table_name} WHERE company = %(company)s AND title = %(title)s AND location = %(location)s AND type = %(type)s",
+    supabase = db.SupabaseConnection().CLIENT
+    for job in job_data:
+
+        response = (
+            supabase.table(TABLE_NAME)
+            .select("id, company, title, location, link, processed, type")
+            .eq("company", job.company)
+            .eq("title", job.title)
+            .eq("location", job.location)
+            .eq("link", job.link)
+            .eq("type", job.type_of_opportunity)
+            .execute()
+        )
+
+        if not response.data:
+            request = supabase.table(TABLE_NAME).insert(
                 {
+                    "id": str(uuid.uuid4()),
                     "company": job.company,
                     "title": job.title,
                     "location": job.location,
-                    "type": job.type,
-                },
+                    "link": job.link,
+                    "processed": job.processed,
+                    "type": job.type_of_opportunity,
+                }
             )
-            row = cursor.fetchone()
 
-            if row is None:
-                cursor.execute(
-                    f"INSERT INTO {table_name} (company, title, location, link, processed, type) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (
-                        job.company,
-                        job.title,
-                        job.location,
-                        job.link,
-                        job.processed,
-                        job.type,
-                    ),
-                )
-        connection.commit()
+            response = request.execute()
 
 
 def list_opportunities(
@@ -71,19 +75,20 @@ def list_opportunities(
 ) -> List[Opportunity]:
     """Lists all oppportunities in DB as well as returns them"""
 
-    with db.instantiate_db_connection() as connection:
-        cursor = connection.cursor()
+    supabase = db.SupabaseConnection().CLIENT
 
-        if filtered:
-            cursor.execute(
-                f"SELECT * FROM {table_name} WHERE processed = 0 AND type = '{opp_type}' LIMIT 15"
-            )
-        else:
-            cursor.execute(f"SELECT * FROM {table_name}")
+    if filtered:
+        response = (
+            supabase.table(TABLE_NAME)
+            .select("*")
+            .match({"processed": False, "type": opp_type})
+            .limit(15)
+            .execute()
+        )
+    else:
+        response = supabase.table(TABLE_NAME).select("*")
 
-        rows = cursor.fetchall()
-
-        return read_all_opportunities(rows, debug)
+    return read_all_opportunities(response.data, debug)
 
 
 def read_all_opportunities(rows, debug_tool: bool) -> List[Opportunity]:
@@ -91,18 +96,25 @@ def read_all_opportunities(rows, debug_tool: bool) -> List[Opportunity]:
     opportunities = []
 
     for row in rows:
-        company, title, location, link, processed, type = row
-
         if debug_tool:
-            print("Company:", company)
-            print("Title:", title)
-            print("Location:", location)
-            print("Link:", link)
-            print("Processed:", processed)
-            print("Type: ", type)
+            print("Id:", row.get("id"))
+            print("Company:", row.get("company"))
+            print("Title:", row.get("title"))
+            print("Location:", row.get("location"))
+            print("Link:", row.get("link"))
+            print("Processed:", row.get("processed"))
+            print("Type: ", row.get("type"))
             print(" ")
 
-        opportunity = Opportunity(company, title, location, link, processed, type)
+        opportunity = Opportunity(
+            row.get("id"),
+            row.get("company"),
+            row.get("title"),
+            row.get("location"),
+            row.get("link"),
+            row.get("processed"),
+            row.get("type"),
+        )
 
         opportunities.append(opportunity)
 
@@ -112,24 +124,18 @@ def read_all_opportunities(rows, debug_tool: bool) -> List[Opportunity]:
 def update_opportunities_status(data_results: List[Opportunity]) -> None:
     """Updates the status of the jobs to processed = 1 after it's been sent by the discord bot"""
 
-    with db.instantiate_db_connection() as connection:
-        cursor = connection.cursor()
-
-        for data_block in data_results:
-            cursor.execute(
-                f"UPDATE {table_name} SET processed = %s WHERE company = %s AND title = %s AND location = %s",
-                (
-                    1,
-                    data_block.company,
-                    data_block.title,
-                    data_block.location,
-                ),
-            )
-
-        connection.commit()
+    supabase = db.SupabaseConnection().CLIENT
+    for data_block in data_results:
+        supabase.table(TABLE_NAME).update({"processed": 1}).match(
+            {
+                "company": data_block.company,
+                "title": data_block.title,
+                "location": data_block.location,
+            }
+        ).execute()
 
 
-def format_opportunities(data_results: str, formatted_text: str) -> str:
+def format_opportunities(data_results: List[Opportunity], formatted_text: str) -> str:
     """Receives data from list_filtered_opporunities() and returns a single string message"""
 
     formatted_string = ""

@@ -5,6 +5,8 @@ import os
 from dotenv import load_dotenv
 import re
 import requests
+import uuid
+from time import sleep
 
 load_dotenv()
 utils.verify_set_env_variables()
@@ -23,21 +25,21 @@ def request_github_internship24_data() -> List[Opportunity]:
     parse_content = utils.content_parser(url)
     td_elems = parse_content.find_all("tr")
 
-    for cell in td_elems[1:]:
+    for cell in td_elems[10:]:
         if len(github_list) <= MAX_OPPORTUNITY_LIST_LENGTH:
             elements = cell.find_all("td")
-
             company = elements[0].text
             title = elements[1].text
             location = elements[2].text
             link = elements[3]
             if "🔒" not in link.text:
                 opportunity = Opportunity(
+                    uuid.uuid4(),
                     company,
                     title,
                     location,
                     link.find("a")["href"],
-                    0,
+                    False,
                     OpportunityType.INTERNSHIP.value,
                 )
                 github_list.append(opportunity)
@@ -104,7 +106,7 @@ def request_rapidapi_indeed_data() -> List[Opportunity]:
             title = elem["title"]
             location = elem["location"]
             link = f'https://www.indeed.com/viewjob?jk={elem["id"]}&locality=us'
-            processed = 0
+            processed = False
 
             opportunity = Opportunity(
                 company,
@@ -126,16 +128,23 @@ def request_linkedin_data() -> List[Opportunity]:
     url = os.getenv("LINKEDIN_URL")
     parse_content = utils.content_parser(url)
 
-    linked_in_jobs = utils.blueprint_opportunity_formatter(
-        parse_content,
-        "base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
-        "hidden-nested-link",
-        "base-search-card__title",
-        "job-search-card__location",
-        "base-card__full-link",
-        True,
-        MAX_OPPORTUNITY_LIST_LENGTH,
-        OpportunityType.FULL_TIME.value,
-    )
+    MAX_RETRY = 5
+
+    for _ in range(MAX_RETRY):
+        try:
+            linked_in_jobs = utils.blueprint_opportunity_formatter(
+                parse_content,
+                "base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card",
+                "hidden-nested-link",
+                "base-search-card__title",
+                "job-search-card__location",
+                "base-card__full-link",
+                True,
+                MAX_OPPORTUNITY_LIST_LENGTH,
+                OpportunityType.FULL_TIME.value,
+            )
+            break
+        except ValueError:
+            sleep(0.5)
 
     return linked_in_jobs
