@@ -15,7 +15,6 @@ from utility.scrape import (
 from utility.palm import gpt_job_analyze
 from utility.error import ErrorMsg
 
-
 # Load and determine if all env variables are set
 load_dotenv()
 ut.verify_set_env_variables()
