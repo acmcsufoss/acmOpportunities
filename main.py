@@ -12,7 +12,7 @@ from utility.scrape import (
     request_linkedin_data,
     request_linkedin_internship24_data,
 )
-from utility.palm import gpt_job_analyze
+from utility.gemini import gpt_job_analyze
 from utility.error import ErrorMsg
 
 # Load and determine if all env variables are set
