@@ -79,7 +79,7 @@ async def main():
     # Creates table in database
     with_create_table_command = ut.extract_command_value().create
     if with_create_table_command:
-        TABLE_NAME = os.getenv("DB_TABLE")
+        TABLE_NAME = os.getenv("DB_TABLE_NAME")
 
         db.create(TABLE_NAME)
 
