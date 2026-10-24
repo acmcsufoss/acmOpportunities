@@ -84,7 +84,7 @@ def create_table(TABLE_NAME: str) -> None:
 def add_column(column_name: str, data_type: str) -> None:
     """Adds a column for adjustment to the table after the table has been created"""
 
-    TABLE_NAME = os.getenv("DB_TABLE")
+    TABLE_NAME = os.getenv("DB_TABLE_NAME")
 
     request = f"""
         ALTER TABLE {TABLE_NAME} ADD COLUMN {column_name} {data_type};
