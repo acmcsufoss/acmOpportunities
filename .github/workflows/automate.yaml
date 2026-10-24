@@ -51,7 +51,7 @@ jobs:
 
         # Custom CLI Command
         # fmt: off
-        #LINT.IF .env.example
+#LINT.IF .env.example
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
