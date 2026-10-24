@@ -10,8 +10,8 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "beautifulsoup4>=4.15.0",
-    # v this is most likely outdated v
-    "google-generativeai>=0.8.6",
+    "dotenv>=0.9.9",
+    "google-genai>=2.25.0",
     "python-dotenv>=1.2.3",
     "requests>=2.34.2",
     "supabase>=2.31.0",

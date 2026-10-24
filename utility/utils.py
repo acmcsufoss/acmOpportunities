@@ -47,7 +47,7 @@ def verify_set_env_variables() -> any:
         "DB_TABLE_NAME",
         "LINKEDIN_URL",
         "DISCORD_WEBHOOK",
-        "PALM_API_KEY",
+        "GEMINI_API_KEY",
         "GH_INTERN24_URL",
         "LINKEDIN_INTERN_URL",
         "PROMPTS_PATH",

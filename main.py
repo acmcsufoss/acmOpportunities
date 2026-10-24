@@ -12,7 +12,7 @@ from utility.scrape import (
     request_linkedin_data,
     request_linkedin_internship24_data,
 )
-from utility.palm import gpt_job_analyze
+from utility.gemini import gpt_job_analyze
 from utility.error import ErrorMsg
 
 # Load and determine if all env variables are set
@@ -79,7 +79,7 @@ async def main():
     # Creates table in database
     with_create_table_command = ut.extract_command_value().create
     if with_create_table_command:
-        TABLE_NAME = os.getenv("DB_TABLE")
+        TABLE_NAME = os.getenv("DB_TABLE_NAME")
 
         db.create(TABLE_NAME)
 
