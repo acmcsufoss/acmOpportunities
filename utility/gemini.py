@@ -40,7 +40,7 @@ def get_parsed_values(prompt: str) -> list[bool]:
     """Function which returns parsed values if the opportunity mathces with the clubs values"""
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-3.8-flash",
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=0.0,
